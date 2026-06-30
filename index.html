@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>969Resto Internal</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="icon" type="image/png" href="969restologo2.png">
+
+<style>
+body{background:#f4f6f9;margin:0;font-family:Segoe UI,sans-serif}
+.sidebar{width:250px;height:100vh;position:fixed;left:0;top:0;background:#111827;color:#fff;overflow-y:auto;z-index:1000}
+.sidebar h3{padding:20px;text-align:center;border-bottom:1px solid rgba(255,255,255,.1)}
+.sidebar a{display:block;color:#fff;padding:15px 20px;text-decoration:none}
+.sidebar a:hover{background:#1f2937}
+.content{margin-left:250px;padding:20px}
+.card{border:none;border-radius:15px;box-shadow:0 2px 10px rgba(0,0,0,.08);margin-bottom:15px}
+iframe{width:100%;height:700px;border:none;border-radius:10px}
+.mobile-header{display:none}
+.btn-drive{width:100%}
+@media(max-width:768px){
+.mobile-header{display:flex;justify-content:space-between;align-items:center;background:#111827;color:#fff;padding:15px;position:sticky;top:0;z-index:1100}
+.sidebar{left:-260px;transition:.3s}
+.sidebar.show{left:0}
+.content{margin-left:0;padding:15px}
+iframe{height:500px}
+}
+</style>
+
+</head>
+
+<body>
+<div class="mobile-header">
+    <h5 class="m-0">969RESTO</h5>
+    <button class="btn btn-light btn-sm" onclick="toggleMenu()">☰ Menu</button>
+</div>
+
+
+<div class="sidebar">
+    <h3>969RESTO</h3>
+
+    <a href="#dashboard">🏠 Dashboard</a>
+    <a href="#keuangan">💰 Data Keuangan</a>
+    <a href="#absensi">🕒 Absensi</a>
+    <a href="#upload-document">☁️ Upload Document</a>
+</div>
+
+<div class="content">
+
+    <!-- Dashboard -->
+    <section id="dashboard">
+        <h2>Dashboard</h2>
+
+        <div class="row mt-4">
+
+            <div class="col-md-4">
+                <div class="card p-4">
+                    <h5>Income Mingguan</h5>
+                    <h2>Rp 0</h2>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card p-4">
+                    <h5>Gaji Dibagikan</h5>
+                    <h2>Rp 0</h2>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card p-4">
+                    <h5>Total Staff</h5>
+                    <h2>0</h2>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <br><br>
+
+    <!-- Keuangan -->
+    <section id="keuangan">
+        <h2>Data Keuangan</h2>
+
+        <div class="card p-3 mt-3">
+
+            <iframe src="https://docs.google.com/spreadsheets/d/1J6vBBHllbGZn1Pi3i_NRmTKkONXYHock6b2AZUDDtuI/edit?gid=236422969"></iframe>
+
+        </div>
+    </section>
+
+    <br><br>
+
+    <!-- Absensi -->
+    <section id="absensi">
+        <h2>Data Absensi</h2>
+
+        <div class="card p-3 mt-3">
+
+            <iframe src="https://docs.google.com/spreadsheets/d/1m_XCuxx5A_kcpMxs_FatQnGGVtbkzL9PCNUdUj94bBw/edit?gid=0"></iframe>
+
+        </div>
+    </section>
+
+    <br><br>
+
+<!-- Upload Document -->
+<section id="upload-document">
+    <h2>Online Document</h2>
+
+    <div class="card p-3 mt-3">
+
+        <div class="mb-3">
+            <a href="https://drive.google.com/drive/folders/1i6H-rsAjT4EQTytrJuFDGeSmEeV0Zjqs?usp=drive_link"
+               target="_blank"
+               class="btn btn-success">
+               📂 Open Drive
+            </a>
+        </div>
+
+        <iframe
+            src="https://drive.google.com/embeddedfolderview?id=1i6H-rsAjT4EQTytrJuFDGeSmEeV0Zjqs#list"
+            width="100%"
+            height="800"
+            frameborder="0">
+        </iframe>
+
+    </div>
+</section>
+
+</div>
+
+
+<script>
+function toggleMenu(){
+    document.querySelector('.sidebar').classList.toggle('show');
+}
+</script>
+</body>
+</html>
