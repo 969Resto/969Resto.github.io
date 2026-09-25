@@ -123,7 +123,7 @@
       <input id="staffId" type="hidden">
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label class="text-xs font-semibold text-amber-300">Nama<input id="staffName" required class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500" placeholder="Tulis nama staff"></label>
-        <label class="text-xs font-semibold text-amber-300">Jabatan<select id="staffRole" required class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500"><option value="">Pilih jabatan</option><option>CEO</option><option>Head Manager</option><option>Assistant Manager</option><option>Team Leader</option><option>Head Chef</option><option>Assistant Chef</option><option>Worker</option><option>Recruit</option></select></label>
+        <label class="text-xs font-semibold text-amber-300">Jabatan<select id="staffRole" required class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500"><option value="">Pilih jabatan</option><option>CEO</option><option>CFO</option><option>Head Manager</option><option>Assistant Manager</option><option>Team Leader</option><option>Head Chef</option><option>Assistant Chef</option><option>Worker</option><option>Recruit</option></select></label>
         <label class="text-xs font-semibold text-amber-300">Status<select id="staffStatus" class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500"><option>Aktif</option><option>Nonaktif</option><option>Cuti</option><option>Warning</option><option>Fired</option><option>Resign</option></select></label>
         <label class="text-xs font-semibold text-amber-300">Tanggal Lahir<input id="staffDob" class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500" placeholder="DD/MM/YYYY"></label>
         <label class="text-xs font-semibold text-amber-300">No IC<input id="staffIc" class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500" placeholder="Tulis nomor IC"></label>
@@ -144,7 +144,7 @@
     const SUPABASE_URL = 'https://rdnhbqufxidbdwmxxabf.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_e1eww7RhRX3_l95kwvyM4Q_LysMicKv';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const roleOrder = ['CEO', 'Head Manager', 'Assistant Manager', 'Team Leader', 'Head Chef', 'Assistant Chef', 'Worker', 'Recruit'];
+    const roleOrder = ['CEO', 'CFO', 'Head Manager', 'Assistant Manager', 'Team Leader', 'Head Chef', 'Assistant Chef', 'Worker', 'Recruit'];
     let staffData = [];
     const defaultStaffData = [
       { name: 'Zanagi Nyanyak Nyarya', role: 'CEO', status: 'Aktif', dob: '08/04/2010', ic: '-', cid: 'PIE2842' },
