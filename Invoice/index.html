@@ -959,8 +959,24 @@
           windowWidth: 820
         });
 
+        const maxExportWidth = 1107;
+        const maxExportHeight = 984;
+        const exportScale = Math.min(
+          1,
+          maxExportWidth / canvas.width,
+          maxExportHeight / canvas.height
+        );
+        const outputCanvas = exportScale < 1 ? document.createElement('canvas') : canvas;
+
+        if (exportScale < 1) {
+          outputCanvas.width = Math.round(canvas.width * exportScale);
+          outputCanvas.height = Math.round(canvas.height * exportScale);
+          const outputContext = outputCanvas.getContext('2d');
+          outputContext.drawImage(canvas, 0, 0, outputCanvas.width, outputCanvas.height);
+        }
+
         const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/png';
-        const dataUrl = canvas.toDataURL(mimeType, 0.98);
+        const dataUrl = outputCanvas.toDataURL(mimeType, 0.98);
 
         if (shouldUpload) {
           const blob = await (await fetch(dataUrl)).blob();
