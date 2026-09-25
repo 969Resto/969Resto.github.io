@@ -81,6 +81,7 @@
       padding: 0.7rem 0.5rem;
       vertical-align: top;
       word-break: break-word;
+      overflow-wrap: anywhere;
       white-space: normal;
       border-bottom: 1px solid rgba(212, 175, 55, 0.12);
     }
@@ -97,6 +98,11 @@
       background: rgba(120, 53, 15, 0.12);
     }
 
+    .history-table td:nth-child(9),
+    .history-table td:nth-child(10) {
+      max-width: 120px;
+    }
+
     @media (max-width: 640px) {
       .history-table {
         min-width: 780px;
@@ -104,9 +110,10 @@
 
       .history-table th,
       .history-table td {
-        padding-left: 0.4rem;
-        padding-right: 0.4rem;
-        font-size: 10px;
+        padding-left: 0.35rem;
+        padding-right: 0.35rem;
+        font-size: 9.5px;
+        line-height: 1.35;
       }
     }
   </style>
