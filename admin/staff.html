@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>969 Resto - Data Staff</title>
+  <link rel="icon" type="image/png" href="../Invoice/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #080303;
+      color: #fdfbf7;
+      min-height: 100vh;
+      background-image: radial-gradient(circle at 50% 0%, rgba(136, 19, 19, 0.45) 0%, transparent 60%), radial-gradient(circle at 90% 90%, rgba(217, 119, 6, 0.15) 0%, transparent 50%);
+    }
+    .font-luxury { font-family: 'Cinzel', Georgia, serif; }
+    .portal-card { background: linear-gradient(145deg, rgba(28, 12, 12, 0.86), rgba(18, 6, 6, 0.94)); border: 1px solid rgba(212, 175, 55, 0.25); backdrop-filter: blur(16px); }
+    .gold-gradient-text { background: linear-gradient(135deg, #fff0b3, #d4af37 50%, #aa8010); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .staff-table th { white-space: nowrap; }
+    .staff-table tbody tr { transition: background-color 0.2s ease; }
+    .staff-table tbody tr:hover { background-color: rgba(120, 53, 15, 0.25); }
+  </style>
+</head>
+<body class="min-h-screen p-4 sm:p-6 md:p-8">
+  <header class="mx-auto flex w-full max-w-7xl flex-col gap-4 border-b border-amber-900/30 pb-6 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex items-center gap-4">
+      <img src="../Invoice/logo.png" alt="969 Resto" class="h-12 w-12 rounded-xl border border-amber-500/30 bg-black/40 object-contain p-1 shadow-lg">
+      <div>
+        <h1 class="font-luxury text-xl font-bold tracking-wider text-amber-100 sm:text-2xl">969 RESTO</h1>
+        <p class="mt-1 text-xs uppercase tracking-widest text-amber-200/60">Database Staff & Struktur Tim</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="btnExport" type="button" class="rounded-xl border border-emerald-500/40 bg-emerald-950/40 px-4 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-900/50">
+        <i class="fa-solid fa-file-export mr-1"></i> Ekspor CSV
+      </button>
+      <button id="btnAddStaff" type="button" class="rounded-xl border border-amber-500/40 bg-amber-600/80 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-500">
+        <i class="fa-solid fa-user-plus mr-1"></i> Tambah Staff
+      </button>
+      <a href="index.html" class="rounded-xl border border-amber-500/30 bg-slate-900/80 px-4 py-2 text-xs font-semibold text-amber-200 transition hover:border-amber-400 hover:bg-slate-800">
+        <i class="fa-solid fa-arrow-left mr-1"></i> Dashboard
+      </a>
+    </div>
+  </header>
+
+  <main class="mx-auto w-full max-w-7xl space-y-6 py-8">
+    <section class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-amber-400">Data Kepegawaian</p>
+        <h2 class="font-luxury text-2xl font-bold text-slate-100 sm:text-3xl">Data Staff 969 Resto</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">Ringkasan anggota tim, jabatan, status kerja, dan identitas internal.</p>
+      </div>
+      <div class="text-xs text-slate-500">Pembaruan terakhir: <span class="text-amber-200">20/09/2026</span></div>
+    </section>
+
+    <section class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div class="portal-card rounded-xl p-4"><p class="text-[10px] uppercase tracking-wider text-amber-300">Total Staff</p><strong id="totalStaff" class="mt-1 block text-2xl text-white">0</strong></div>
+      <div class="portal-card rounded-xl p-4"><p class="text-[10px] uppercase tracking-wider text-emerald-300">Aktif</p><strong id="activeStaff" class="mt-1 block text-2xl text-emerald-300">0</strong></div>
+      <div class="portal-card rounded-xl p-4"><p class="text-[10px] uppercase tracking-wider text-blue-300">Jabatan</p><strong id="totalRoles" class="mt-1 block text-2xl text-blue-300">0</strong></div>
+      <div class="portal-card rounded-xl p-4"><p class="text-[10px] uppercase tracking-wider text-rose-300">Nonaktif</p><strong id="inactiveStaff" class="mt-1 block text-2xl text-rose-300">0</strong></div>
+    </section>
+
+    <section class="portal-card overflow-hidden rounded-2xl shadow-2xl">
+      <div class="flex flex-col gap-3 border-b border-amber-900/30 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <label class="relative block">
+            <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-500"></i>
+            <input id="searchStaff" type="search" placeholder="Cari nama, jabatan, CID..." class="w-full rounded-xl border border-amber-900/40 bg-slate-950/80 py-2.5 pl-9 pr-3 text-xs text-slate-100 outline-none transition focus:border-amber-500 sm:w-72">
+          </label>
+          <select id="statusFilter" class="rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-xs text-slate-200 outline-none focus:border-amber-500">
+            <option value="all">Semua Status</option>
+            <option value="Aktif">Aktif</option>
+            <option value="Nonaktif">Nonaktif</option>
+          </select>
+          <select id="roleFilter" class="rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-xs text-slate-200 outline-none focus:border-amber-500">
+            <option value="all">Semua Jabatan</option>
+          </select>
+        </div>
+        <p id="resultCount" class="text-xs text-slate-500"></p>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="staff-table w-full min-w-[920px] border-collapse text-left text-xs text-slate-300">
+          <thead class="bg-amber-950/30 text-[10px] uppercase tracking-wider text-amber-300">
+            <tr class="border-b border-amber-900/40">
+              <th class="px-5 py-4">No</th>
+              <th class="px-5 py-4">Nama</th>
+              <th class="px-5 py-4">Jabatan</th>
+              <th class="px-5 py-4">Status</th>
+              <th class="px-5 py-4">DOB</th>
+              <th class="px-5 py-4">No IC</th>
+              <th class="px-5 py-4">CID</th>
+              <th class="px-5 py-4">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="staffBody" class="divide-y divide-amber-900/20"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="staffModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <form id="staffForm" class="portal-card w-full max-w-2xl rounded-2xl p-6 shadow-2xl">
+      <div class="mb-5 flex items-center justify-between border-b border-amber-900/30 pb-4">
+        <div>
+          <h3 id="staffModalTitle" class="font-luxury text-lg font-bold text-amber-200">Tambah Staff</h3>
+          <p class="mt-1 text-xs text-slate-400">Data akan tersimpan online di Supabase.</p>
+        </div>
+        <button id="btnCloseStaffModal" type="button" class="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white" aria-label="Tutup">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <input id="staffId" type="hidden">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label class="text-xs font-semibold text-amber-300">Nama<input id="staffName" required class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500" placeholder="Tulis nama staff"></label>
+        <label class="text-xs font-semibold text-amber-300">Jabatan<input id="staffRole" required class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500" placeholder="Tulis jabatan"></label>
+        <label class="text-xs font-semibold text-amber-300">Status<select id="staffStatus" class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500"><option>Aktif</option><option>Nonaktif</option></select></label>
+        <label class="text-xs font-semibold text-amber-300">Tanggal Lahir<input id="staffDob" class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500" placeholder="DD/MM/YYYY"></label>
+        <label class="text-xs font-semibold text-amber-300">No IC<input id="staffIc" class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500" placeholder="Tulis nomor IC"></label>
+        <label class="text-xs font-semibold text-amber-300">CID<input id="staffCid" class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500" placeholder="Tulis CID"></label>
+      </div>
+      <div class="mt-6 flex justify-end gap-2">
+        <button id="btnCancelStaff" type="button" class="rounded-xl border border-slate-700 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-800">Batal</button>
+        <button type="submit" class="rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400">Simpan Staff</button>
+      </div>
+    </form>
+  </div>
+
+  <footer class="mx-auto w-full max-w-7xl border-t border-amber-900/30 py-6 text-center text-xs text-slate-500">
+    <p>&copy; 2026 <strong>969 Resto</strong> &bull; Internal Management System</p>
+  </footer>
+
+  <script>
+    const SUPABASE_URL = 'https://rdnhbqufxidbdwmxxabf.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_e1eww7RhRX3_l95kwvyM4Q_LysMicKv';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let staffData = [];
+    const defaultStaffData = [
+      { name: 'Zanagi Nyanyak Nyarya', role: 'CEO', status: 'Aktif', dob: '08/04/2010', ic: '-', cid: 'PIE2842' },
+      { name: 'Sultan N Ramaksa', role: 'CFO', status: 'Aktif', dob: '14/05/2000', ic: '-', cid: 'MAN07871' },
+      { name: 'Yin Pie Mooks', role: 'Assistant Manager', status: 'Aktif', dob: '-', ic: '-', cid: '-' },
+      { name: 'Ryubuu M Ramaksa', role: 'Assistant Manager', status: 'Aktif', dob: '30/06/2006', ic: '-', cid: 'RSG29258' },
+      { name: 'Yin Flo La Baskerville', role: 'Head Chef', status: 'Aktif', dob: '05/05/2005', ic: '-', cid: 'KHS62054' },
+      { name: 'Vano Vermillio', role: 'Team Leader', status: 'Aktif', dob: '18/02/2003', ic: '-', cid: 'QND08977' },
+      { name: 'Jordy Volmares', role: 'Team Leader', status: 'Aktif', dob: '05/04/1999', ic: '-', cid: 'PIU09337' },
+      { name: 'Jay Antakai', role: 'Assistant Chef', status: 'Aktif', dob: '08/01/2004', ic: '-', cid: 'RCG33442' },
+      { name: 'Zico Iko', role: 'Assistant Chef', status: 'Aktif', dob: '30/08/2000', ic: '-', cid: '-' },
+      { name: 'Alexcius Cheng', role: 'Assistant Chef', status: 'Aktif', dob: '06/04/2000', ic: '-', cid: 'TUT64213' }
+    ];
+
+    const staffBody = document.getElementById('staffBody');
+    const searchStaff = document.getElementById('searchStaff');
+    const statusFilter = document.getElementById('statusFilter');
+    const roleFilter = document.getElementById('roleFilter');
+
+    function renderStaff() {
+      const query = searchStaff.value.trim().toLowerCase();
+      const status = statusFilter.value;
+      const role = roleFilter.value;
+      const filtered = staffData.filter(staff => {
+        const matchesQuery = [staff.name, staff.role, staff.status, staff.dob, staff.ic, staff.cid].join(' ').toLowerCase().includes(query);
+        return matchesQuery && (status === 'all' || staff.status === status) && (role === 'all' || staff.role === role);
+      });
+
+      staffBody.innerHTML = filtered.length ? filtered.map((staff, index) => `
+        <tr>
+          <td class="px-5 py-4 font-semibold text-slate-500">${index + 1}</td>
+          <td class="px-5 py-4 font-semibold text-white">${staff.name}</td>
+          <td class="px-5 py-4"><span class="rounded-full bg-blue-500/20 px-3 py-1 text-[11px] font-semibold text-blue-300">${staff.role}</span></td>
+          <td class="px-5 py-4"><span class="rounded-full ${staff.status === 'Aktif' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'} px-3 py-1 text-[11px] font-semibold">${staff.status}</span></td>
+          <td class="px-5 py-4 text-slate-300">${staff.dob}</td>
+          <td class="px-5 py-4 font-mono text-slate-400">${staff.ic}</td>
+          <td class="px-5 py-4 font-mono text-amber-200">${staff.cid}</td>
+          <td class="px-5 py-4 whitespace-nowrap">
+            <button type="button" onclick="editStaff('${staff.id}')" class="mr-2 text-blue-300 hover:text-blue-200" title="Edit staff"><i class="fa-solid fa-pen"></i></button>
+            <button type="button" onclick="deleteStaff('${staff.id}')" class="text-rose-400 hover:text-rose-300" title="Hapus staff"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('') : '<tr><td colspan="8" class="px-5 py-12 text-center text-slate-500">Data staff tidak ditemukan.</td></tr>';
+      document.getElementById('resultCount').textContent = `${filtered.length} dari ${staffData.length} staff`;
+    }
+
+    function updateSummary() {
+      document.getElementById('totalStaff').textContent = staffData.length;
+      document.getElementById('activeStaff').textContent = staffData.filter(staff => staff.status === 'Aktif').length;
+      document.getElementById('inactiveStaff').textContent = staffData.filter(staff => staff.status !== 'Aktif').length;
+      document.getElementById('totalRoles').textContent = new Set(staffData.map(staff => staff.role)).size;
+      roleFilter.innerHTML = '<option value="all">Semua Jabatan</option>';
+      [...new Set(staffData.map(staff => staff.role))].sort().forEach(role => roleFilter.insertAdjacentHTML('beforeend', `<option value="${role}">${role}</option>`));
+    }
+
+    async function loadStaff() {
+      const { data, error } = await supabaseClient.from('staff').select('*').order('created_at', { ascending: true });
+      if (error) {
+        staffBody.innerHTML = `<tr><td colspan="8" class="px-5 py-12 text-center text-rose-300">Gagal memuat data staff: ${error.message}</td></tr>`;
+        return;
+      }
+
+      if (!data.length) {
+        const { data: seededData, error: seedError } = await supabaseClient.from('staff').insert(defaultStaffData).select();
+        if (seedError) {
+          staffBody.innerHTML = `<tr><td colspan="8" class="px-5 py-12 text-center text-rose-300">Gagal membuat data awal: ${seedError.message}</td></tr>`;
+          return;
+        }
+        staffData = seededData || [];
+      } else {
+        staffData = data;
+      }
+      updateSummary();
+      renderStaff();
+    }
+
+    function closeStaffModal() {
+      document.getElementById('staffModal').classList.add('hidden');
+      document.getElementById('staffModal').classList.remove('flex');
+    }
+
+    function openStaffModal(staff) {
+      document.getElementById('staffModalTitle').textContent = staff ? 'Edit Staff' : 'Tambah Staff';
+      document.getElementById('staffId').value = staff?.id || '';
+      document.getElementById('staffName').value = staff?.name || '';
+      document.getElementById('staffRole').value = staff?.role || '';
+      document.getElementById('staffStatus').value = staff?.status || 'Aktif';
+      document.getElementById('staffDob').value = staff?.dob || '';
+      document.getElementById('staffIc').value = staff?.ic || '';
+      document.getElementById('staffCid').value = staff?.cid || '';
+      const modal = document.getElementById('staffModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.getElementById('staffName').focus();
+    }
+
+    window.editStaff = function(id) {
+      const staff = staffData.find(item => String(item.id) === String(id));
+      if (staff) openStaffModal(staff);
+    };
+
+    window.deleteStaff = async function(id) {
+      const staff = staffData.find(item => String(item.id) === String(id));
+      if (!staff || !confirm(`Hapus data ${staff.name}?`)) return;
+      const { error } = await supabaseClient.from('staff').delete().eq('id', id);
+      if (error) {
+        alert(`Gagal menghapus staff: ${error.message}`);
+        return;
+      }
+      await loadStaff();
+    };
+
+    document.getElementById('btnAddStaff').addEventListener('click', () => openStaffModal());
+    document.getElementById('btnCloseStaffModal').addEventListener('click', closeStaffModal);
+    document.getElementById('btnCancelStaff').addEventListener('click', closeStaffModal);
+    document.getElementById('staffModal').addEventListener('click', event => {
+      if (event.target.id === 'staffModal') closeStaffModal();
+    });
+
+    document.getElementById('staffForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      const id = document.getElementById('staffId').value;
+      const staff = {
+        name: document.getElementById('staffName').value.trim(),
+        role: document.getElementById('staffRole').value.trim(),
+        status: document.getElementById('staffStatus').value,
+        dob: document.getElementById('staffDob').value.trim() || '-',
+        ic: document.getElementById('staffIc').value.trim() || '-',
+        cid: document.getElementById('staffCid').value.trim() || '-'
+      };
+      const request = id
+        ? supabaseClient.from('staff').update(staff).eq('id', id)
+        : supabaseClient.from('staff').insert(staff);
+      const { error } = await request;
+      if (error) {
+        alert(`Gagal menyimpan staff: ${error.message}`);
+        return;
+      }
+      closeStaffModal();
+      await loadStaff();
+    });
+
+    function escapeCsv(value) { return `"${String(value).replace(/"/g, '""')}"`; }
+    document.getElementById('btnExport').addEventListener('click', () => {
+      const rows = [['No', 'Nama', 'Jabatan', 'Status', 'DOB', 'No IC', 'CID'], ...staffData.map((staff, index) => [index + 1, staff.name, staff.role, staff.status, staff.dob, staff.ic, staff.cid])];
+      const csv = rows.map(row => row.map(escapeCsv).join(',')).join('\n');
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+      link.download = 'data-staff-969-resto.csv';
+      link.click();
+      URL.revokeObjectURL(link.href);
+    });
+
+    [searchStaff, statusFilter, roleFilter].forEach(input => input.addEventListener('input', renderStaff));
+    loadStaff();
+  </script>
+</body>
+</html>
