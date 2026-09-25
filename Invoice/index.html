@@ -293,14 +293,15 @@
           <input type="text" id="input-bill-sub" class="w-full bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-400 focus:border-amber-500 focus:outline-none" value="Official Dining & Catering Order" oninput="syncLiveText()">
         </div>
 
-        <div class="grid grid-cols-2 gap-2">
+        <div>
           <div>
             <label class="block font-semibold text-slate-400 mb-1">Tanggal Faktur</label>
-            <input type="text" id="input-inv-date" class="w-full bg-slate-800/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:border-amber-500 focus:outline-none" value="24 September 2026" oninput="syncLiveText()">
-          </div>
-          <div>
-            <label class="block font-semibold text-slate-400 mb-1">Jatuh Tempo</label>
-            <input type="text" id="input-due-date" class="w-full bg-slate-800/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:border-amber-500 focus:outline-none" value="24 September 2026" oninput="syncLiveText()">
+            <div class="flex items-stretch gap-2">
+              <input type="text" id="input-inv-date" class="min-w-0 flex-1 bg-slate-800/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:border-amber-500 focus:outline-none" oninput="syncLiveText()">
+              <button type="button" onclick="setInvoiceDateToday()" class="inline-flex shrink-0 items-center gap-1 rounded-md bg-amber-400 px-2.5 py-1 text-[10px] font-bold text-slate-950 shadow-sm transition hover:bg-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300/60">
+                <i class="fa-solid fa-calendar-day"></i> Hari Ini
+              </button>
+            </div>
           </div>
         </div>
 
@@ -373,10 +374,10 @@
           
           <!-- Top Bar inside Invoice Card -->
           <div class="no-print flex items-center justify-between mb-4 pb-2">
-            <div class="text-[11.5px] font-medium text-slate-400 flex items-center gap-1.5 opacity-80 hover:opacity-100 transition cursor-default">
-              <i class="fa-solid fa-arrow-left text-xs"></i>
-              <span>Back to invoices</span>
-            </div>
+            <a href="../index.html" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-[11.5px] font-semibold text-slate-300 transition hover:border-amber-400 hover:bg-slate-700 hover:text-amber-300" title="Kembali ke menu utama resto">
+              <i class="fa-solid fa-house text-xs"></i>
+              <span>Menu Utama Resto</span>
+            </a>
             <button onclick="exportInvoice('png')" class="flex items-center gap-2 bg-[#4F46E5] hover:bg-[#4338CA] active:scale-95 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-md shadow-indigo-500/20 transition-all cursor-pointer">
               <i class="fa-solid fa-download text-xs"></i>
               <span>Save as PNG</span>
@@ -447,11 +448,7 @@
                 <table class="border-collapse" style="width: 100%; margin-left: auto;">
                   <tr>
                     <td style="text-align: right; color: var(--text-secondary); padding: 2.5px 0; width: 48%;">Invoice date</td>
-                    <td id="display-inv-date" style="text-align: right; font-weight: 700; color: var(--text-primary); padding: 2.5px 0; width: 52%;">24 September 2026</td>
-                  </tr>
-                  <tr>
-                    <td style="text-align: right; color: var(--text-secondary); padding: 2.5px 0;">Due date</td>
-                    <td id="display-due-date" style="text-align: right; font-weight: 700; color: var(--text-primary); padding: 2.5px 0;">24 September 2026</td>
+                    <td id="display-inv-date" style="text-align: right; font-weight: 700; color: var(--text-primary); padding: 2.5px 0; width: 52%;"></td>
                   </tr>
                   <tr>
                     <td style="text-align: right; color: var(--text-secondary); padding: 2.5px 0;">Created by</td>
@@ -848,20 +845,33 @@
 
       document.getElementById('display-bill-to').textContent = document.getElementById('input-bill-to').value || '-';
       document.getElementById('display-bill-sub').textContent = document.getElementById('input-bill-sub').value || '';
-      document.getElementById('display-inv-date').textContent = document.getElementById('input-inv-date').value || '-';
-      document.getElementById('display-due-date').textContent = document.getElementById('input-due-date').value || '-';
+      document.getElementById('display-inv-date').textContent = document.getElementById('input-inv-date').value || '';
       document.getElementById('display-created-by').textContent = document.getElementById('input-created-by').value || '-';
 
       document.getElementById('display-payment-method').textContent = document.getElementById('input-payment-method').value || '';
       document.getElementById('display-note-text').textContent = document.getElementById('input-note-text').value || '';
     }
 
-    function randomizeInvoiceNo() {
+    function randomizeInvoiceNo(showNotification = true) {
       const randNum = String(Math.floor(1 + Math.random() * 9999)).padStart(4, '0');
       const invStr = `INV-${randNum}`;
       document.getElementById('input-inv-no').value = invStr;
       syncLiveText();
-      showToast(`No. Faktur: ${invStr}`, '🎲');
+      if (showNotification) {
+        showToast(`No. Faktur: ${invStr}`, '🎲');
+      }
+    }
+
+    function setInvoiceDateToday() {
+      const today = new Intl.DateTimeFormat('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      }).format(new Date());
+
+      document.getElementById('input-inv-date').value = today;
+      syncLiveText();
+      showToast(`Tanggal faktur: ${today}`, '📅');
     }
 
     function showToast(message, icon = '✨') {
@@ -1024,6 +1034,7 @@
 
     window.onload = function() {
       preloadLogoSafe();
+      randomizeInvoiceNo(false);
       syncLiveText();
       buildTableRows();
       adjustMobileScale();
