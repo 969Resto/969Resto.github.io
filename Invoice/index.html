@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>969Resto Invoice</title>
+  <link rel="icon" type="image/png" href="logo.png" />
+
+  <!-- Google Fonts: Inter, Outfit, and Cinzel -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- html2canvas for 3x export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Outfit', 'Inter', sans-serif;
+      background-color: #0b0f17;
+      color: #e2e8f0;
+      min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .font-serif-luxury {
+      font-family: 'Cinzel', Georgia, serif;
+    }
+
+    /* THEME 1: Classic Maroon & Gold Heritage (Default Theme) */
+    .theme-heritage {
+      --bg-sheet: #FFFDF9;
+      --border-accent: #E8DCC4;
+      --text-primary: #3B0808;
+      --text-secondary: #7A4949;
+      --accent-color: #881313;
+      --accent-soft: rgba(136, 19, 19, 0.06);
+      --table-header-bg: #FAF5EA;
+      --row-border: #F2E8D5;
+      --total-highlight: #5B0B0B;
+      --card-shadow: 0 25px 60px -15px rgba(59, 8, 8, 0.15), 0 0 0 1px rgba(197, 160, 89, 0.35);
+    }
+
+    /* THEME 2: Executive Slate & Gold */
+    .theme-executive {
+      --bg-sheet: #FFFFFF;
+      --border-accent: #E2E8F0;
+      --text-primary: #0F172A;
+      --text-secondary: #64748B;
+      --accent-color: #C5A059;
+      --accent-soft: rgba(197, 160, 89, 0.08);
+      --table-header-bg: #F8FAFC;
+      --row-border: #F1F5F9;
+      --total-highlight: #0F172A;
+      --card-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(226, 232, 240, 0.8);
+    }
+
+    /* THEME 3: Clean Minimalist Studio */
+    .theme-minimalist {
+      --bg-sheet: #FFFFFF;
+      --border-accent: #E5E7EB;
+      --text-primary: #111827;
+      --text-secondary: #6B7280;
+      --accent-color: #4F46E5;
+      --accent-soft: rgba(79, 70, 229, 0.06);
+      --table-header-bg: transparent;
+      --row-border: #F3F4F6;
+      --total-highlight: #111827;
+      --card-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.07), 0 0 0 1px #E5E7EB;
+    }
+
+    /* THEME 4: Dark Obsidian Luxury */
+    .theme-obsidian {
+      --bg-sheet: #111827;
+      --border-accent: #374151;
+      --text-primary: #F9FAFB;
+      --text-secondary: #9CA3AF;
+      --accent-color: #F59E0B;
+      --accent-soft: rgba(245, 158, 11, 0.12);
+      --table-header-bg: #1F2937;
+      --row-border: #1F2937;
+      --total-highlight: #F59E0B;
+      --card-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px #374151;
+    }
+
+    .invoice-canvas-sheet {
+      background: var(--bg-sheet);
+      color: var(--text-primary);
+      box-shadow: var(--card-shadow);
+      border-radius: 20px;
+      width: 820px;
+      min-width: 820px;
+      margin: 0 auto;
+      box-sizing: border-box;
+      transform-origin: top center;
+    }
+
+    .preview-scale-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      display: flex;
+      justify-content: center;
+      padding-bottom: 20px;
+    }
+
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(217, 119, 6, 0.5);
+      border-radius: 8px;
+    }
+
+    @media print {
+      body {
+        background: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .preview-scale-wrapper {
+        overflow: visible !important;
+        display: block !important;
+      }
+      .invoice-canvas-sheet {
+        box-shadow: none !important;
+        border: none !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        transform: none !important;
+        padding: 16px !important;
+      }
+    }
+  </style>
+</head>
+<body class="p-2 sm:p-4 md:p-6 lg:p-8 flex flex-col justify-between">
+
+  <!-- Mobile View Toggle Tab -->
+  <div class="no-print lg:hidden max-w-7xl mx-auto w-full mb-3 flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1 shadow-lg">
+    <button id="tab-btn-editor" onclick="switchMobileTab('editor')" class="flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 bg-amber-500 text-slate-950 shadow">
+      <i class="fa-solid fa-pen-to-square"></i> Form & Menu
+    </button>
+    <button id="tab-btn-preview" onclick="switchMobileTab('preview')" class="flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200">
+      <i class="fa-solid fa-eye"></i> Lihat Faktur
+    </button>
+  </div>
+
+  <header class="no-print max-w-7xl mx-auto w-full mb-4 md:mb-6 bg-slate-900/95 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl border border-slate-800 shadow-xl flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/20 text-sm">
+        969
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-sm sm:text-base font-bold text-slate-100 tracking-wide font-serif-luxury">969 RESTO</h1>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-400/10 text-amber-400 border border-amber-400/30">
+            SM$ EDITION
+          </span>
+        </div>
+        <p class="text-[10px] sm:text-[11px] text-slate-400">Responsive Studio &bull; Multi-Screen &bull; Auto Balance</p>
+      </div>
+    </div>
+
+    <!-- Theme Selector Dropdown + Action Buttons -->
+    <div class="flex items-center flex-wrap gap-2 w-full sm:w-auto justify-between sm:justify-end">
+      <div class="flex items-center gap-1.5 bg-slate-800/90 px-2.5 py-1.5 rounded-xl border border-slate-700 text-xs">
+        <i class="fa-solid fa-palette text-amber-400 text-xs"></i>
+        <select id="theme-selector" onchange="changeTheme(this.value)" class="bg-transparent text-slate-200 font-semibold focus:outline-none cursor-pointer text-xs">
+          <option value="theme-heritage" selected>Heritage (Default)</option>
+          <option value="theme-executive">Executive Slate</option>
+          <option value="theme-minimalist">Clean Minimalist</option>
+          <option value="theme-obsidian">Dark Obsidian</option>
+        </select>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <button onclick="uploadInvoiceToFivemanage()" class="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-md shadow-emerald-500/20 transition active:scale-95">
+          <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+          <span>Upload FiveManage</span>
+        </button>
+
+        <button onclick="exportInvoice('png')" class="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs shadow-md shadow-amber-500/20 transition active:scale-95">
+          <i class="fa-solid fa-file-arrow-down text-xs"></i>
+          <span>Save PNG</span>
+        </button>
+
+        <button onclick="exportInvoice('jpg')" class="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold rounded-xl text-xs transition active:scale-95">
+          <i class="fa-regular fa-image text-xs text-amber-400"></i>
+          <span>Save JPG</span>
+        </button>
+
+        <button onclick="window.print()" class="hidden md:flex items-center gap-1.5 px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs transition">
+          <i class="fa-solid fa-print"></i>
+          <span>Cetak</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="no-print fixed top-4 right-4 z-50 transform -translate-y-20 opacity-0 transition-all duration-300 pointer-events-none bg-slate-900/95 text-slate-100 px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 text-xs font-semibold border border-amber-500/40 backdrop-blur">
+    <span id="toast-icon" class="text-amber-400 text-sm">✨</span>
+    <span id="toast-message">Notifikasi</span>
+  </div>
+
+  <div class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-8 items-start mb-16 lg:mb-8">
+    
+    <!-- LEFT PANEL: Editor & Form Controls -->
+    <aside id="section-editor" class="no-print lg:col-span-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-2xl space-y-4 md:space-y-5 text-slate-200 backdrop-blur-md">
+      
+      <!-- 1-Click Fast Preset Buttons -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-[11px] font-bold text-amber-400 uppercase tracking-widest flex items-center gap-1.5 font-serif-luxury">
+            <i class="fa-solid fa-utensils"></i> Menu Pilihan 969 Resto
+          </label>
+          <span class="text-[10px] text-slate-400 font-medium">Klik untuk +1</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="addPresetItem('Paket Regular', 25000)" class="text-left bg-slate-800/80 hover:bg-amber-950/30 hover:border-amber-500/50 border border-slate-700/80 p-2.5 rounded-xl transition group active:scale-95">
+            <div class="text-[11.5px] font-bold text-slate-200 group-hover:text-amber-300 transition-colors">Paket Regular</div>
+            <div class="text-[11px] text-amber-400 font-mono font-bold mt-0.5">SM$ 25.000</div>
+          </button>
+
+          <button onclick="addPresetItem('Paket Kemasan', 35000)" class="text-left bg-slate-800/80 hover:bg-amber-950/30 hover:border-amber-500/50 border border-slate-700/80 p-2.5 rounded-xl transition group active:scale-95">
+            <div class="text-[11.5px] font-bold text-slate-200 group-hover:text-amber-300 transition-colors">Paket Kemasan</div>
+            <div class="text-[11px] text-amber-400 font-mono font-bold mt-0.5">SM$ 35.000</div>
+          </button>
+
+          <button onclick="addPresetItem('Paket Camilan', 20000)" class="text-left bg-slate-800/80 hover:bg-amber-950/30 hover:border-amber-500/50 border border-slate-700/80 p-2.5 rounded-xl transition group active:scale-95">
+            <div class="text-[11.5px] font-bold text-slate-200 group-hover:text-amber-300 transition-colors">Paket Camilan</div>
+            <div class="text-[11px] text-amber-400 font-mono font-bold mt-0.5">SM$ 20.000</div>
+          </button>
+
+          <button onclick="addPresetItem('Paket Kemasan Camilan', 30000)" class="text-left bg-slate-800/80 hover:bg-amber-950/30 hover:border-amber-500/50 border border-slate-700/80 p-2.5 rounded-xl transition group active:scale-95">
+            <div class="text-[11.5px] font-bold text-slate-200 group-hover:text-amber-300 transition-colors">Paket K. Camilan</div>
+            <div class="text-[11px] text-amber-400 font-mono font-bold mt-0.5">SM$ 30.000</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Invoice Details Inputs -->
+      <div class="space-y-3 pt-3 text-xs border-t border-slate-800">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-semibold text-slate-400">Nomor Faktur</label>
+              <button onclick="randomizeInvoiceNo()" class="text-[10px] text-amber-400 hover:text-amber-300">🎲 Acak</button>
+            </div>
+            <input type="text" id="input-inv-no" class="w-full bg-slate-800/90 border border-slate-700 rounded-lg px-2.5 py-1.5 font-bold text-slate-100 focus:border-amber-500 focus:outline-none" value="INV-0003" oninput="syncLiveText()">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-400 mb-1">Status Faktur</label>
+            <select id="input-status" class="w-full bg-slate-800/90 border border-slate-700 rounded-lg px-2 py-1.5 font-semibold text-slate-100 focus:border-amber-500 focus:outline-none" onchange="syncLiveText()">
+              <option value="Sent" selected>Sent (Kuning)</option>
+              <option value="Paid">Paid (Hijau)</option>
+              <option value="Unpaid">Unpaid (Merah)</option>
+              <option value="Pending">Pending (Biru)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-400 mb-1">Ditagihkan Kepada (Bill To)</label>
+          <input type="text" id="input-bill-to" class="w-full bg-slate-800/90 border border-slate-700 rounded-lg px-3 py-1.5 font-semibold text-slate-100 focus:border-amber-500 focus:outline-none" value="Nama Penerima" oninput="syncLiveText()">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-400 mb-1">Sub Judul Pesanan</label>
+          <input type="text" id="input-bill-sub" class="w-full bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-400 focus:border-amber-500 focus:outline-none" value="Official Dining & Catering Order" oninput="syncLiveText()">
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-semibold text-slate-400 mb-1">Tanggal Faktur</label>
+            <input type="text" id="input-inv-date" class="w-full bg-slate-800/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:border-amber-500 focus:outline-none" value="24 September 2026" oninput="syncLiveText()">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-400 mb-1">Jatuh Tempo</label>
+            <input type="text" id="input-due-date" class="w-full bg-slate-800/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-200 focus:border-amber-500 focus:outline-none" value="24 September 2026" oninput="syncLiveText()">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-400 mb-1">Kasir / Penerbit (Created by)</label>
+          <input type="text" id="input-created-by" class="w-full bg-slate-800/90 border border-slate-700 rounded-lg px-3 py-1.5 font-medium text-slate-100 focus:border-amber-500 focus:outline-none" value="NamaPengirim" oninput="syncLiveText()">
+        </div>
+
+        <!-- Discount Controller -->
+        <div class="p-3 bg-slate-800/80 border border-slate-700 rounded-xl space-y-2">
+          <label class="block font-bold text-amber-300 text-xs flex items-center justify-between">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-tag"></i> Diskon / Potongan</span>
+            <span class="text-[10px] text-slate-400">Kalkulasi Otomatis</span>
+          </label>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <span class="text-[10px] text-slate-400 block mb-0.5">Tipe Diskon</span>
+              <select id="discount-type" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-slate-200 font-medium focus:outline-none text-xs" onchange="calculateBalance()">
+                <option value="fixed">Nominal (SM$)</option>
+                <option value="percent">Persen (%)</option>
+              </select>
+            </div>
+            <div>
+              <span class="text-[10px] text-slate-400 block mb-0.5">Nilai</span>
+              <input type="number" id="discount-value" min="0" step="any" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 font-bold text-amber-200 focus:outline-none text-xs font-mono" value="0" placeholder="0" oninput="calculateBalance()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Note and Instructions -->
+        <div class="space-y-2 pt-1 border-t border-slate-800">
+          <div>
+            <label class="block font-semibold text-slate-400 mb-1">Metode Pembayaran</label>
+            <input type="text" id="input-payment-method" class="w-full bg-slate-800/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-300 text-xs focus:border-amber-500 focus:outline-none" value="Metode Pembayaran : Invoicing (Transfer CID : MAN07871 (Sultan) )" oninput="syncLiveText()">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-400 mb-1">Catatan Penutup</label>
+            <input type="text" id="input-note-text" class="w-full bg-slate-800/90 border border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-300 text-xs focus:border-amber-500 focus:outline-none" value="Note : Thank you for dining with us at 969 Resto! See you again soon." oninput="syncLiveText()">
+          </div>
+        </div>
+
+        <!-- Custom Row Addition & Logo Upload -->
+        <div class="flex items-center gap-2 pt-1">
+          <button onclick="addEmptyRow()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 flex items-center justify-center gap-1.5 transition active:scale-95">
+            <i class="fa-solid fa-plus text-amber-400"></i>
+            Tambah Baris Kosong
+          </button>
+          
+          <label class="cursor-pointer py-2.5 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-medium text-slate-300 flex items-center justify-center gap-1.5 transition active:scale-95" title="Ganti logo dengan gambar alternatif">
+            <i class="fa-solid fa-cloud-arrow-up text-amber-400"></i>
+            <span class="hidden sm:inline">Ganti Logo</span>
+            <input type="file" id="logo-uploader" accept="image/*" class="hidden" onchange="handleLogoUpload(event)">
+          </label>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- RIGHT PANEL: High-Definition Live Preview -->
+    <main id="section-preview" class="lg:col-span-8 flex flex-col items-center w-full">
+      
+      <!-- Responsive Scroll & Pinch Hint for Mobile -->
+      <div class="no-print lg:hidden w-full flex items-center justify-between text-[11px] text-slate-400 bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-800 mb-2">
+        <span><i class="fa-solid fa-arrows-left-right text-amber-400 mr-1"></i> Geser layar untuk melihat faktur utuh</span>
+        <button onclick="resetMobileZoom()" class="text-amber-400 font-bold hover:underline">Pas Layar</button>
+      </div>
+
+      <div class="preview-scale-wrapper custom-scrollbar" id="scale-container">
+        <div id="invoice-sheet" class="invoice-canvas-sheet theme-heritage p-6 sm:p-10 lg:p-12 transition-all duration-300 relative">
+          
+          <!-- Top Bar inside Invoice Card -->
+          <div class="no-print flex items-center justify-between mb-4 pb-2">
+            <div class="text-[11.5px] font-medium text-slate-400 flex items-center gap-1.5 opacity-80 hover:opacity-100 transition cursor-default">
+              <i class="fa-solid fa-arrow-left text-xs"></i>
+              <span>Back to invoices</span>
+            </div>
+            <button onclick="exportInvoice('png')" class="flex items-center gap-2 bg-[#4F46E5] hover:bg-[#4338CA] active:scale-95 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-md shadow-indigo-500/20 transition-all cursor-pointer">
+              <i class="fa-solid fa-download text-xs"></i>
+              <span>Save as PNG</span>
+            </button>
+          </div>
+
+          <!-- HEADER ROW: Exact Logo + Titles + Status -->
+          <table class="w-full border-collapse mb-6" style="table-layout: fixed;">
+            <tr>
+              <!-- Left: Exact Circular Logo + Restaurant Info -->
+              <td style="width: 65%; vertical-align: middle;">
+                <table class="border-collapse">
+                  <tr>
+                    <td style="vertical-align: middle; width: 90px; padding-right: 16px;">
+                      <div id="logo-wrapper" style="width: 82px; height: 82px; position: relative;">
+                        <!-- Logo gambar langsung -->
+                        <img id="permanent-logo-img" src="logo.png" alt="969 Resto Logo" style="width: 82px; height: 82px; border-radius: 50%; object-fit: cover; display: block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.18));" />
+                      </div>
+                    </td>
+                    <td style="vertical-align: middle;">
+                      <div style="font-family: 'Cinzel', serif; font-size: 24px; font-weight: 900; color: var(--text-primary); letter-spacing: 0.5px; line-height: 1.1;">
+                        969 RESTO
+                      </div>
+                      <div style="font-size: 10px; font-weight: 700; color: var(--accent-color); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 3px; font-family: 'Outfit', sans-serif;">
+                        Authentic Quality Cuisine &amp; Catering
+                      </div>
+                      <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px; font-weight: 500;">
+                        Universal Dining Services
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+
+              <!-- Right: Invoice Tag, Number & SVG Centered Status Badge -->
+              <td style="width: 35%; text-align: right; vertical-align: top;">
+                <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-start; width: 100%;">
+                  <div style="font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 800; color: var(--text-secondary); letter-spacing: 2px; text-transform: uppercase; line-height: 1.2;">
+                    INVOICE
+                  </div>
+                  <div id="display-inv-no" style="font-family: 'Cinzel', serif; font-size: 26px; font-weight: 900; color: var(--text-primary); line-height: 1.2; margin-top: 3px; margin-bottom: 0px; letter-spacing: -0.5px;">
+                    INV-0003
+                  </div>
+                  <div id="badge-svg-container" style="display: block; text-align: right; line-height: 0; margin-top: 14px; padding-top: 2px;"></div>
+                </div>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Divider Line -->
+          <div style="height: 1px; width: 100%; background: var(--border-accent); margin: 16px 0 22px 0;"></div>
+
+          <!-- CLIENT BILL TO & METADATA -->
+          <table class="w-full border-collapse mb-8" style="table-layout: fixed; font-size: 12px; line-height: 1.5;">
+            <tr>
+              <td style="width: 52%; vertical-align: top;">
+                <div style="font-size: 10.5px; font-weight: 800; color: var(--text-secondary); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px;">
+                  BILL TO
+                </div>
+                <div id="display-bill-to" style="font-size: 15px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.2px;">
+                  Pelanggan Setia 969 Resto
+                </div>
+                <div id="display-bill-sub" style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px;">
+                  Official Dining &amp; Catering Order
+                </div>
+              </td>
+              <td style="width: 48%; vertical-align: top;">
+                <table class="border-collapse" style="width: 100%; margin-left: auto;">
+                  <tr>
+                    <td style="text-align: right; color: var(--text-secondary); padding: 2.5px 0; width: 48%;">Invoice date</td>
+                    <td id="display-inv-date" style="text-align: right; font-weight: 700; color: var(--text-primary); padding: 2.5px 0; width: 52%;">24 September 2026</td>
+                  </tr>
+                  <tr>
+                    <td style="text-align: right; color: var(--text-secondary); padding: 2.5px 0;">Due date</td>
+                    <td id="display-due-date" style="text-align: right; font-weight: 700; color: var(--text-primary); padding: 2.5px 0;">24 September 2026</td>
+                  </tr>
+                  <tr>
+                    <td style="text-align: right; color: var(--text-secondary); padding: 2.5px 0;">Created by</td>
+                    <td id="display-created-by" style="text-align: right; font-weight: 700; color: var(--accent-color); padding: 2.5px 0;">Eloise</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
+          <!-- ITEMS SECTION -->
+          <div style="font-size: 10.5px; font-weight: 800; color: var(--text-secondary); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px;">
+            ADDITIONAL ITEMS
+          </div>
+
+          <table id="table-display" class="w-full border-collapse" style="table-layout: fixed; font-size: 12.5px;">
+            <thead>
+              <tr style="border-top: 1px solid var(--border-accent); border-bottom: 1.5px solid var(--border-accent); color: var(--text-secondary); font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; background: var(--table-header-bg);">
+                <th style="padding: 10px 8px; text-align: left; width: 44%;">DESCRIPTION</th>
+                <th style="padding: 10px 4px; text-align: center; width: 14%;">QTY</th>
+                <th style="padding: 10px 4px; text-align: right; width: 21%;">UNIT PRICE</th>
+                <th style="padding: 10px 8px; text-align: right; width: 21%;">AMOUNT</th>
+                <th class="no-print" style="width: 32px;"></th>
+              </tr>
+            </thead>
+            <tbody id="invoice-items-body">
+              <!-- Dynamic editable rows with multi-digit persistent typing -->
+            </tbody>
+          </table>
+
+          <!-- TOTAL CALCULATION CARD -->
+          <div style="margin-top: 24px; padding-top: 16px; border-top: 1.5px solid var(--border-accent);">
+            <table class="w-full border-collapse" style="font-size: 12.5px; table-layout: fixed;">
+              <tr>
+                <td style="width: 58%;"></td>
+                <td style="width: 20%; text-align: left; color: var(--text-secondary); padding: 4px 0; font-weight: 500;">Subtotal</td>
+                <td id="display-subtotal" style="width: 22%; text-align: right; font-weight: 700; color: var(--text-primary); padding: 4px 0; font-family: monospace;">SM$ 0</td>
+              </tr>
+              <tr id="row-discount" style="display: none;">
+                <td></td>
+                <td id="label-discount" style="text-align: left; color: #DC2626; padding: 4px 0; font-weight: 600;">Diskon</td>
+                <td id="display-discount" style="text-align: right; font-weight: 700; color: #DC2626; padding: 4px 0; font-family: monospace;">- SM$ 0</td>
+              </tr>
+              <tr>
+                <td></td>
+                <td colspan="2" style="padding-top: 8px; border-bottom: 2px solid var(--text-primary);"></td>
+              </tr>
+              <tr>
+                <td style="padding-top: 12px;"></td>
+                <td style="padding-top: 12px; font-size: 15px; font-weight: 800; color: var(--text-primary); letter-spacing: 0.5px;">TOTAL</td>
+                <td id="display-total" style="padding-top: 12px; font-size: 20px; font-weight: 900; color: var(--total-highlight); text-align: right; font-family: monospace; letter-spacing: -0.5px;">SM$ 0</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- FOOTER: PAYMENT INSTRUCTIONS & NOTE -->
+          <div id="notes-container" style="margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--border-accent); font-size: 11.5px; line-height: 1.6;">
+            <div style="font-weight: 800; color: var(--text-primary); letter-spacing: 0.5px; margin-bottom: 2px;">
+              Catatan Pembayaran:
+            </div>
+            <div id="display-payment-method" style="color: var(--text-primary); font-weight: 600;">
+              Metode Pembayaran : Invoicing (Transfer CID : MAN07871 (Sultan) )
+            </div>
+            <div id="display-note-text" style="color: var(--text-secondary); font-style: italic; margin-top: 3px;">
+              Note : Thank you for dining with us at 969 Resto! See you again soon.
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <div class="no-print lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 border-t border-slate-800 p-2.5 backdrop-blur-lg flex items-center justify-around gap-2 shadow-2xl">
+    <button onclick="exportInvoice('png')" class="flex-1 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95">
+      <i class="fa-solid fa-file-arrow-down"></i>
+      <span>Simpan PNG</span>
+    </button>
+    <button onclick="exportInvoice('jpg')" class="flex-1 py-2.5 bg-slate-800 text-slate-200 border border-slate-700 font-semibold rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-95">
+      <i class="fa-regular fa-image text-amber-400"></i>
+      <span>Simpan JPG</span>
+    </button>
+    <button onclick="window.print()" class="px-3.5 py-2.5 bg-slate-800 text-slate-300 border border-slate-700 rounded-xl text-xs flex items-center justify-center active:scale-95">
+      <i class="fa-solid fa-print"></i>
+    </button>
+  </div>
+
+  <script>
+    const SUPABASE_FUNCTION_URL = 'https://rdnhbqufxidbdwmxxabf.supabase.co/functions/v1/upload-invoice';
+    const SUPABASE_ANON_KEY = 'sb_publishable_e1eww7RhRX3_l95kwvyM4Q_LysMicKv';
+
+    // State items
+    let itemsData = [
+      { id: 1, desc: 'Paket Regular', qty: 50, price: 25000 },
+      { id: 2, desc: 'Paket Kemasan', qty: 50, price: 35000 }
+    ];
+
+    // Simpan Base64 Data URL dari logo untuk mencegah blokir Tainted Canvas
+    let logoBase64Safe = null;
+
+    function formatSMS(val) {
+      const num = Math.max(0, Number(val) || 0);
+      return 'SM$ ' + Math.round(num).toLocaleString('id-ID');
+    }
+
+    // Mengubah logo.png menjadi Data URL internal yang aman dari error CORS / Tainted Canvas
+    function preloadLogoSafe() {
+      const img = document.getElementById('permanent-logo-img');
+      if (!img) return;
+
+      // Coba preload lewat fetch jika berjalan di server/localhost
+      fetch('logo.png')
+        .then(res => res.blob())
+        .then(blob => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            logoBase64Safe = reader.result;
+            img.src = logoBase64Safe;
+          };
+          reader.readAsDataURL(blob);
+        })
+        .catch(() => {
+          // Jika dibuka langsung via file:/// maka browser mungkin memblokir fetch,
+          // biarkan file logo.png diakses langsung oleh img
+          img.src = 'logo.png';
+        });
+    }
+
+    function switchMobileTab(tab) {
+      const secEditor = document.getElementById('section-editor');
+      const secPreview = document.getElementById('section-preview');
+      const btnEditor = document.getElementById('tab-btn-editor');
+      const btnPreview = document.getElementById('tab-btn-preview');
+
+      if (tab === 'editor') {
+        secEditor.classList.remove('hidden');
+        secPreview.classList.add('hidden');
+        secPreview.classList.remove('flex');
+        
+        btnEditor.className = "flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 bg-amber-500 text-slate-950 shadow";
+        btnPreview.className = "flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200";
+      } else {
+        secEditor.classList.add('hidden');
+        secPreview.classList.remove('hidden');
+        secPreview.classList.add('flex');
+
+        btnPreview.className = "flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 bg-amber-500 text-slate-950 shadow";
+        btnEditor.className = "flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200";
+
+        adjustMobileScale();
+      }
+    }
+
+    function adjustMobileScale() {
+      const wrapper = document.getElementById('scale-container');
+      const sheet = document.getElementById('invoice-sheet');
+      if (!wrapper || !sheet) return;
+
+      const screenWidth = window.innerWidth;
+      if (screenWidth < 860) {
+        const availableWidth = screenWidth - 24;
+        const scaleRatio = availableWidth / 820;
+        sheet.style.transform = `scale(${scaleRatio})`;
+        sheet.style.marginBottom = `-${820 * (1 - scaleRatio)}px`;
+      } else {
+        sheet.style.transform = 'none';
+        sheet.style.marginBottom = '0px';
+      }
+    }
+
+    function resetMobileZoom() {
+      adjustMobileScale();
+      showToast('Tampilan disesuaikan ke layar!', '📱');
+    }
+
+    window.addEventListener('resize', adjustMobileScale);
+
+    function changeTheme(themeName) {
+      const sheet = document.getElementById('invoice-sheet');
+      sheet.className = `invoice-canvas-sheet ${themeName} p-6 sm:p-10 lg:p-12 transition-all duration-300`;
+      
+      if (themeName === 'theme-obsidian') {
+        document.body.style.backgroundColor = '#030712';
+      } else {
+        document.body.style.backgroundColor = '#0b0f17';
+      }
+
+      syncLiveText();
+      showToast(`Tema aktif: ${themeName.replace('theme-', '')}`, '🎨');
+    }
+
+    function handleLogoUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        logoBase64Safe = evt.target.result;
+        document.getElementById('permanent-logo-img').src = logoBase64Safe;
+        showToast('Logo berhasil diganti!', '🖼️');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function renderStatusSvg(statusText = 'Sent') {
+      const container = document.getElementById('badge-svg-container');
+      if (!container) return;
+
+      let bg = '#FEF3C7';
+      let stroke = '#FDE68A';
+      let textCol = '#B45309';
+
+      const s = statusText.toLowerCase();
+      if (s === 'paid') {
+        bg = '#DEF7EC'; stroke = '#BCF0DA'; textCol = '#03543F';
+      } else if (s === 'unpaid') {
+        bg = '#FDE8E8'; stroke = '#FBD5D5'; textCol = '#9B1C1C';
+      } else if (s === 'pending') {
+        bg = '#E0E7FF'; stroke = '#C7D2FE'; textCol = '#3730A3';
+      }
+
+      const textLen = statusText.length;
+      const width = Math.max(72, textLen * 9.5 + 32);
+      const height = 26;
+      const rx = 13;
+
+      container.innerHTML = `
+        <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" style="display: block; overflow: visible;">
+          <rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="${rx}" ry="${rx}" fill="${bg}" stroke="${stroke}" stroke-width="1" />
+          <text x="${width / 2}" y="${height / 2}" text-anchor="middle" dominant-baseline="central" fill="${textCol}" font-family="'Outfit', 'Inter', sans-serif" font-size="12px" font-weight="700" letter-spacing="0.3px">
+            ${statusText}
+          </text>
+        </svg>
+      `;
+    }
+
+    function buildTableRows() {
+      const tbody = document.getElementById('invoice-items-body');
+      tbody.innerHTML = '';
+
+      itemsData.forEach((item) => {
+        const tr = document.createElement('tr');
+        tr.id = `item-row-${item.id}`;
+        tr.style.borderBottom = '1px solid var(--row-border)';
+
+        tr.innerHTML = `
+          <td style="padding: 10px 8px; vertical-align: middle;">
+            <input 
+              type="text" 
+              class="w-full bg-transparent border-0 border-b border-transparent focus:border-amber-500 rounded px-1 py-0.5 font-semibold outline-none text-xs" 
+              style="color: var(--text-primary);"
+              value="${item.desc.replace(/"/g, '&quot;')}" 
+              oninput="handleRowInput(${item.id}, 'desc', this.value)"
+            />
+          </td>
+          <td style="padding: 10px 4px; text-align: center; vertical-align: middle;">
+            <input 
+              type="text" 
+              inputmode="numeric"
+              pattern="[0-9]*"
+              class="w-16 text-center bg-slate-100/10 border-0 border-b border-slate-300 dark:border-slate-700 focus:border-amber-500 rounded px-1 py-0.5 outline-none text-xs font-bold font-mono" 
+              style="color: var(--text-primary);"
+              value="${item.qty}" 
+              oninput="handleRowInput(${item.id}, 'qty', this.value)"
+            />
+          </td>
+          <td style="padding: 10px 4px; text-align: right; vertical-align: middle;">
+            <div class="inline-flex items-center justify-end font-mono">
+              <span style="color: var(--text-secondary); margin-right: 4px; font-size: 11px;">SM$</span>
+              <input 
+                type="text" 
+                inputmode="numeric"
+                class="w-20 text-right bg-transparent border-0 border-b border-transparent focus:border-amber-500 rounded px-1 py-0.5 outline-none text-xs font-semibold font-mono" 
+                style="color: var(--text-primary);"
+                value="${item.price}" 
+                oninput="handleRowInput(${item.id}, 'price', this.value)"
+              />
+            </div>
+          </td>
+          <td id="amount-col-${item.id}" style="padding: 10px 8px; text-align: right; font-weight: 800; color: var(--text-primary); vertical-align: middle; font-family: monospace;">
+            ${formatSMS(item.qty * item.price)}
+          </td>
+          <td class="no-print text-center" style="padding: 10px 0; vertical-align: middle;">
+            <button onclick="deleteRow(${item.id})" class="text-slate-400 hover:text-rose-500 transition px-1" title="Hapus">
+              <i class="fa-regular fa-trash-can text-xs"></i>
+            </button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+      calculateBalance();
+    }
+
+    function handleRowInput(id, field, rawVal) {
+      const item = itemsData.find(i => i.id === id);
+      if (!item) return;
+
+      if (field === 'qty') {
+        const clean = rawVal.replace(/\D/g, '');
+        item.qty = clean === '' ? 0 : parseInt(clean, 10);
+      } else if (field === 'price') {
+        const clean = rawVal.replace(/\D/g, '');
+        item.price = clean === '' ? 0 : parseInt(clean, 10);
+      } else if (field === 'desc') {
+        item.desc = rawVal;
+      }
+
+      const amountCell = document.getElementById(`amount-col-${id}`);
+      if (amountCell) {
+        amountCell.textContent = formatSMS(item.qty * item.price);
+      }
+
+      calculateBalance();
+    }
+
+    function calculateBalance() {
+      let subtotal = 0;
+      itemsData.forEach(item => {
+        subtotal += (item.qty || 0) * (item.price || 0);
+      });
+
+      const discType = document.getElementById('discount-type').value;
+      const discValInput = parseFloat(document.getElementById('discount-value').value) || 0;
+
+      let discountAmount = 0;
+      if (discType === 'percent') {
+        discountAmount = (subtotal * discValInput) / 100;
+        document.getElementById('label-discount').textContent = `Diskon (${discValInput}%)`;
+      } else {
+        discountAmount = discValInput;
+        document.getElementById('label-discount').textContent = 'Diskon (SM$)';
+      }
+
+      if (discountAmount > subtotal) discountAmount = subtotal;
+      const grandTotal = Math.max(0, subtotal - discountAmount);
+
+      document.getElementById('display-subtotal').textContent = formatSMS(subtotal);
+
+      const discountRow = document.getElementById('row-discount');
+      if (discountAmount > 0) {
+        discountRow.style.display = 'table-row';
+        document.getElementById('display-discount').textContent = `- ${formatSMS(discountAmount)}`;
+      } else {
+        discountRow.style.display = 'none';
+      }
+
+      document.getElementById('display-total').textContent = formatSMS(grandTotal);
+    }
+
+    function addPresetItem(desc, price) {
+      const existing = itemsData.find(i => i.desc === desc);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        itemsData.push({
+          id: Date.now() + Math.floor(Math.random() * 1000),
+          desc: desc,
+          qty: 1,
+          price: price
+        });
+      }
+      buildTableRows();
+      showToast(`+1 ${desc}`, '🍲');
+    }
+
+    function addEmptyRow() {
+      itemsData.push({
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        desc: 'Paket Spesial Baru',
+        qty: 1,
+        price: 25000
+      });
+      buildTableRows();
+      showToast('Baris baru ditambahkan', '➕');
+    }
+
+    function deleteRow(id) {
+      if (itemsData.length <= 1) {
+        showToast('Minimal 1 item di faktur!', '⚠️');
+        return;
+      }
+      itemsData = itemsData.filter(i => i.id !== id);
+      buildTableRows();
+    }
+
+    function syncLiveText() {
+      document.getElementById('display-inv-no').textContent = document.getElementById('input-inv-no').value || 'INV-0003';
+      
+      const status = document.getElementById('input-status').value;
+      renderStatusSvg(status);
+
+      document.getElementById('display-bill-to').textContent = document.getElementById('input-bill-to').value || '-';
+      document.getElementById('display-bill-sub').textContent = document.getElementById('input-bill-sub').value || '';
+      document.getElementById('display-inv-date').textContent = document.getElementById('input-inv-date').value || '-';
+      document.getElementById('display-due-date').textContent = document.getElementById('input-due-date').value || '-';
+      document.getElementById('display-created-by').textContent = document.getElementById('input-created-by').value || '-';
+
+      document.getElementById('display-payment-method').textContent = document.getElementById('input-payment-method').value || '';
+      document.getElementById('display-note-text').textContent = document.getElementById('input-note-text').value || '';
+    }
+
+    function randomizeInvoiceNo() {
+      const randNum = String(Math.floor(1 + Math.random() * 9999)).padStart(4, '0');
+      const invStr = `INV-${randNum}`;
+      document.getElementById('input-inv-no').value = invStr;
+      syncLiveText();
+      showToast(`No. Faktur: ${invStr}`, '🎲');
+    }
+
+    function showToast(message, icon = '✨') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-icon').textContent = icon;
+      document.getElementById('toast-message').textContent = message;
+
+      toast.classList.remove('-translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('-translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+
+    // Ekspor Bebas Error Tainted Canvas
+    async function exportInvoice(format = 'png', shouldUpload = false) {
+      showToast('Menyiapkan gambar resolusi tinggi...', '⏳');
+
+      if (document.fonts) {
+        await document.fonts.ready;
+      }
+
+      const orig = document.getElementById('invoice-sheet');
+      const clone = orig.cloneNode(true);
+
+      clone.querySelectorAll('.no-print').forEach(el => el.remove());
+
+      const tableBody = clone.querySelector('#invoice-items-body');
+      tableBody.innerHTML = '';
+
+      itemsData.forEach(item => {
+        const itemAmount = (item.qty || 0) * (item.price || 0);
+
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid var(--row-border)';
+        tr.innerHTML = `
+          <td style="padding: 10px 8px; text-align: left; font-weight: 600; color: var(--text-primary); font-size: 12.5px;">
+            ${item.desc}
+          </td>
+          <td style="padding: 10px 4px; text-align: center; font-weight: 700; color: var(--text-primary); font-size: 12.5px; font-family: monospace;">
+            ${item.qty}
+          </td>
+          <td style="padding: 10px 4px; text-align: right; font-weight: 600; color: var(--text-secondary); font-size: 12.5px; font-family: monospace;">
+            ${formatSMS(item.price)}
+          </td>
+          <td style="padding: 10px 8px; text-align: right; font-weight: 800; color: var(--text-primary); font-size: 12.5px; font-family: monospace;">
+            ${formatSMS(itemAmount)}
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+
+      // Gunakan safe Base64 jika tersedia agar tidak terjadi Tainted Canvas
+      const cloneImg = clone.querySelector('#permanent-logo-img');
+      if (cloneImg && logoBase64Safe) {
+        cloneImg.src = logoBase64Safe;
+      }
+
+      clone.style.width = '820px';
+      clone.style.minWidth = '820px';
+      clone.style.maxWidth = '820px';
+      clone.style.transform = 'none';
+      clone.style.margin = '0';
+      clone.style.borderRadius = '20px';
+      clone.style.boxShadow = 'none';
+      clone.style.position = 'fixed';
+      clone.style.top = '-99999px';
+      clone.style.left = '0';
+      clone.style.zIndex = '-9999';
+
+      const cloneBadgeContainer = clone.querySelector('#badge-svg-container');
+      if (cloneBadgeContainer) {
+        cloneBadgeContainer.style.display = 'block';
+        cloneBadgeContainer.style.marginTop = '16px';
+        cloneBadgeContainer.style.paddingTop = '2px';
+      }
+
+      document.body.appendChild(clone);
+
+      try {
+        const invNo = document.getElementById('input-inv-no').value.replace(/[^a-zA-Z0-9_-]/g, '') || '0003';
+        const filename = `Invoice-969Resto-${invNo}.${format}`;
+
+        // Konfigurasi html2canvas tanpa allowTaint (untuk mencegah error export)
+        const canvas = await html2canvas(clone, {
+          scale: 3,
+          useCORS: true,
+          backgroundColor: null,
+          logging: false,
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 820
+        });
+
+        const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/png';
+        const dataUrl = canvas.toDataURL(mimeType, 0.98);
+
+        if (shouldUpload) {
+          const blob = await (await fetch(dataUrl)).blob();
+          const formData = new FormData();
+          formData.append('file', blob, filename);
+
+          const response = await fetch(SUPABASE_FUNCTION_URL, {
+            method: 'POST',
+            headers: {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+            },
+            body: formData
+          });
+          const result = await response.json();
+
+          if (!response.ok || !result.url) {
+            throw new Error(result.error || 'Upload FiveManage gagal.');
+          }
+
+          await navigator.clipboard.writeText(result.url);
+          showToast('Upload berhasil. Link disalin!', '✅');
+          window.prompt('Link FiveManage (sudah disalin):', result.url);
+        } else {
+          const downloadLink = document.createElement('a');
+          downloadLink.download = filename;
+          downloadLink.href = dataUrl;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+
+          showToast(`Berhasil disimpan: ${filename}`, '✅');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Gagal ekspor: ' + err.message, '❌');
+      } finally {
+        document.body.removeChild(clone);
+      }
+    }
+
+    function uploadInvoiceToFivemanage() {
+      exportInvoice('png', true);
+    }
+
+    window.onload = function() {
+      preloadLogoSafe();
+      syncLiveText();
+      buildTableRows();
+      adjustMobileScale();
+    };
+  </script>
+</body>
+</html>
