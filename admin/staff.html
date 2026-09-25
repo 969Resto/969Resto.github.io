@@ -56,7 +56,7 @@
         <h2 class="font-luxury text-2xl font-bold text-slate-100 sm:text-3xl">Data Staff 969 Resto</h2>
         <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">Ringkasan anggota tim, jabatan, status kerja, dan identitas internal.</p>
       </div>
-      <div class="text-xs text-slate-500">Pembaruan terakhir: <span class="text-amber-200">20/09/2026</span></div>
+      <div class="text-xs text-slate-500">Pembaruan terakhir: <span id="lastStaffUpdate" class="text-amber-200">-</span></div>
     </section>
 
     <section class="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -163,6 +163,57 @@
     const searchStaff = document.getElementById('searchStaff');
     const statusFilter = document.getElementById('statusFilter');
     const roleFilter = document.getElementById('roleFilter');
+    const lastStaffUpdate = document.getElementById('lastStaffUpdate');
+    const lastStaffUpdateKey = '969-resto-staff-last-update';
+
+    function formatStaffUpdateDate(value) {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '-';
+      return new Intl.DateTimeFormat('id-ID', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).format(date);
+    }
+
+    async function setLastStaffUpdate(value = new Date()) {
+      const timestamp = new Date(value).toISOString();
+      lastStaffUpdate.textContent = formatStaffUpdateDate(timestamp);
+      const { error } = await supabaseClient.from('staff_metadata').upsert({
+        key: 'staff_last_update',
+        updated_at: timestamp
+      });
+      if (error) {
+        localStorage.setItem(lastStaffUpdateKey, timestamp);
+      } else {
+        localStorage.removeItem(lastStaffUpdateKey);
+      }
+    }
+
+    async function loadLastStaffUpdate(data) {
+      const { data: metadata, error } = await supabaseClient
+        .from('staff_metadata')
+        .select('updated_at')
+        .eq('key', 'staff_last_update')
+        .maybeSingle();
+      const storedTimestamp = localStorage.getItem(lastStaffUpdateKey);
+      const recordTimestamps = data
+        .flatMap(staff => [staff.updated_at, staff.created_at])
+        .filter(Boolean)
+        .map(value => new Date(value).getTime())
+        .filter(value => !Number.isNaN(value));
+      const latestRecordTimestamp = recordTimestamps.length ? Math.max(...recordTimestamps) : 0;
+      const storedTime = storedTimestamp ? new Date(storedTimestamp).getTime() : 0;
+
+      if (!error && metadata?.updated_at) {
+        lastStaffUpdate.textContent = formatStaffUpdateDate(metadata.updated_at);
+        localStorage.removeItem(lastStaffUpdateKey);
+      } else if (storedTime >= latestRecordTimestamp && storedTimestamp) {
+        lastStaffUpdate.textContent = formatStaffUpdateDate(storedTimestamp);
+      } else if (latestRecordTimestamp) {
+        lastStaffUpdate.textContent = formatStaffUpdateDate(new Date(latestRecordTimestamp));
+      }
+    }
 
     function renderStaff() {
       const query = searchStaff.value.trim().toLowerCase();
@@ -221,6 +272,7 @@
       } else {
         staffData = data;
       }
+      await loadLastStaffUpdate(staffData);
       updateSummary();
       renderStaff();
     }
@@ -258,6 +310,7 @@
         alert(`Gagal menghapus staff: ${error.message}`);
         return;
       }
+      await setLastStaffUpdate();
       await loadStaff();
     };
 
@@ -287,6 +340,7 @@
         alert(`Gagal menyimpan staff: ${error.message}`);
         return;
       }
+      await setLastStaffUpdate();
       closeStaffModal();
       await loadStaff();
     });
