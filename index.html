@@ -126,6 +126,39 @@
     <p>&copy; 2026 <strong>969 Resto</strong> &bull; Authentic Quality Cuisine & Catering Services. All Rights Reserved.</p>
   </footer>
 
+  <script>
+    const SUPABASE_URL = "https://rdnhbqufxidbdwmxxabf.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_e1eww7RhRX3_l95kwvyM4Q_LysMicKv";
+    const HEARTBEAT_TABLE = "heartbeat";
+
+    async function keepProjectWarm() {
+      try {
+        const url = `${SUPABASE_URL}/rest/v1/${HEARTBEAT_TABLE}?select=id&limit=1`;
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            Accept: "application/json"
+          }
+        });
+
+        if (!response.ok) {
+          console.warn("Heartbeat failed:", response.status);
+          return;
+        }
+
+        console.log("Heartbeat OK");
+      } catch (error) {
+        console.warn("Heartbeat error:", error);
+      }
+    }
+
+    keepProjectWarm();
+
+    const HEARTBEAT_INTERVAL = 3 * 24 * 60 * 60 * 1000;
+    setInterval(keepProjectWarm, HEARTBEAT_INTERVAL);
+  </script>
 
 </body>
 </html>
