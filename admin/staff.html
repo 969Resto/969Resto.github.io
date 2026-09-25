@@ -182,7 +182,7 @@
           <td class="px-5 py-4 font-semibold text-slate-500">${index + 1}</td>
           <td class="px-5 py-4 font-semibold text-white">${staff.name}</td>
           <td class="px-5 py-4"><span class="rounded-full bg-blue-500/20 px-3 py-1 text-[11px] font-semibold text-blue-300">${staff.role}</span></td>
-          <td class="px-5 py-4"><span class="rounded-full ${staff.status === 'Aktif' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'} px-3 py-1 text-[11px] font-semibold">${staff.status}</span></td>
+          <td class="px-5 py-4"><span class="rounded-full ${staff.status === 'Aktif' ? 'bg-emerald-500/20 text-emerald-300' : staff.status === 'Warning' ? 'bg-purple-500/20 text-purple-300' : 'bg-rose-500/20 text-rose-300'} px-3 py-1 text-[11px] font-semibold">${staff.status}</span></td>
           <td class="px-5 py-4 text-slate-300">${staff.dob}</td>
           <td class="px-5 py-4 font-mono text-slate-400">${staff.ic}</td>
           <td class="px-5 py-4 font-mono text-amber-200">${staff.cid}</td>
@@ -197,8 +197,8 @@
 
     function updateSummary() {
       document.getElementById('totalStaff').textContent = staffData.length;
-      document.getElementById('activeStaff').textContent = staffData.filter(staff => staff.status === 'Aktif').length;
-      document.getElementById('inactiveStaff').textContent = staffData.filter(staff => staff.status !== 'Aktif').length;
+      document.getElementById('activeStaff').textContent = staffData.filter(staff => ['Aktif', 'Warning'].includes(staff.status)).length;
+      document.getElementById('inactiveStaff').textContent = staffData.filter(staff => !['Aktif', 'Warning'].includes(staff.status)).length;
       document.getElementById('totalRoles').textContent = new Set(staffData.map(staff => staff.role)).size;
       roleFilter.innerHTML = '<option value="all">Semua Jabatan</option>';
       roleOrder.filter(role => staffData.some(staff => staff.role === role)).forEach(role => roleFilter.insertAdjacentHTML('beforeend', `<option value="${role}">${role}</option>`));
