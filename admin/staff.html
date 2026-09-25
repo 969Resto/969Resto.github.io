@@ -77,6 +77,10 @@
             <option value="all">Semua Status</option>
             <option value="Aktif">Aktif</option>
             <option value="Nonaktif">Nonaktif</option>
+            <option value="Cuti">Cuti</option>
+            <option value="Warning">Warning</option>
+            <option value="Fired">Fired</option>
+            <option value="Resign">Resign</option>
           </select>
           <select id="roleFilter" class="rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-xs text-slate-200 outline-none focus:border-amber-500">
             <option value="all">Semua Jabatan</option>
@@ -120,7 +124,7 @@
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label class="text-xs font-semibold text-amber-300">Nama<input id="staffName" required class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500" placeholder="Tulis nama staff"></label>
         <label class="text-xs font-semibold text-amber-300">Jabatan<input id="staffRole" required class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500" placeholder="Tulis jabatan"></label>
-        <label class="text-xs font-semibold text-amber-300">Status<select id="staffStatus" class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500"><option>Aktif</option><option>Nonaktif</option></select></label>
+        <label class="text-xs font-semibold text-amber-300">Status<select id="staffStatus" class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500"><option>Aktif</option><option>Nonaktif</option><option>Cuti</option><option>Warning</option><option>Fired</option><option>Resign</option></select></label>
         <label class="text-xs font-semibold text-amber-300">Tanggal Lahir<input id="staffDob" class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500" placeholder="DD/MM/YYYY"></label>
         <label class="text-xs font-semibold text-amber-300">No IC<input id="staffIc" class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500" placeholder="Tulis nomor IC"></label>
         <label class="text-xs font-semibold text-amber-300">CID<input id="staffCid" class="mt-1 w-full rounded-xl border border-amber-900/40 bg-slate-950/80 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500" placeholder="Tulis CID"></label>
