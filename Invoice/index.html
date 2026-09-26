@@ -224,6 +224,14 @@
     <span id="toast-message">Notifikasi</span>
   </div>
 
+  <div id="invoiceLinkPopup" class="no-print fixed inset-0 z-[100] hidden items-center justify-center bg-black/75 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="invoiceLinkPopupTitle" aria-describedby="invoiceLinkPopupMessage">
+    <div class="w-full max-w-lg rounded-2xl border border-amber-500/30 bg-slate-950/95 p-5 text-slate-100 shadow-2xl shadow-black/50 sm:p-6">
+      <div class="flex items-start gap-3"><span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-400/30 bg-emerald-400/10 text-emerald-300"><i class="fa-solid fa-link"></i></span><div class="min-w-0 flex-1"><h2 id="invoiceLinkPopupTitle" class="text-lg font-bold text-amber-100">Link Berhasil Dibuat</h2><p id="invoiceLinkPopupMessage" class="mt-1 text-sm text-slate-400">Link sudah disalin. Salin kembali atau tutup popup ini.</p></div><button id="btnCloseInvoiceLinkPopup" type="button" class="rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button></div>
+      <label class="mt-5 block text-xs font-semibold text-amber-300">Link FiveManage<input id="invoiceLinkValue" readonly class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-3 text-sm text-slate-200 outline-none focus:border-amber-500"></label>
+      <div class="mt-5 flex justify-end gap-2"><button id="btnCopyInvoiceLink" type="button" class="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-bold text-amber-200 transition hover:bg-amber-500/20"><i class="fa-regular fa-copy mr-1"></i> Salin Link</button><button id="btnDoneInvoiceLink" type="button" class="rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-amber-400">Selesai</button></div>
+    </div>
+  </div>
+
   <div class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-8 items-start mb-16 lg:mb-8">
     
     <!-- LEFT PANEL: Editor & Form Controls -->
@@ -889,6 +897,37 @@
       }, 2500);
     }
 
+    function showInvoiceLinkPopup(url) {
+      document.getElementById('invoiceLinkValue').value = url;
+      document.getElementById('invoiceLinkPopup').classList.remove('hidden');
+      document.getElementById('invoiceLinkPopup').classList.add('flex');
+      document.body.classList.add('overflow-hidden');
+      document.getElementById('invoiceLinkValue').focus();
+      document.getElementById('invoiceLinkValue').select();
+    }
+
+    function closeInvoiceLinkPopup() {
+      document.getElementById('invoiceLinkPopup').classList.add('hidden');
+      document.getElementById('invoiceLinkPopup').classList.remove('flex');
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    document.getElementById('btnCloseInvoiceLinkPopup').addEventListener('click', closeInvoiceLinkPopup);
+    document.getElementById('btnDoneInvoiceLink').addEventListener('click', closeInvoiceLinkPopup);
+    document.getElementById('invoiceLinkPopup').addEventListener('click', event => { if (event.target.id === 'invoiceLinkPopup') closeInvoiceLinkPopup(); });
+    document.getElementById('btnCopyInvoiceLink').addEventListener('click', async () => {
+      const link = document.getElementById('invoiceLinkValue').value;
+      try {
+        await navigator.clipboard.writeText(link);
+        showToast('Link berhasil disalin!', '✅');
+      } catch {
+        document.getElementById('invoiceLinkValue').select();
+        document.execCommand('copy');
+        showToast('Link siap disalin!', '✅');
+      }
+    });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') closeInvoiceLinkPopup(); });
+
     // Ekspor Bebas Error Tainted Canvas
     async function exportInvoice(format = 'png', shouldUpload = false) {
       showToast('Menyiapkan gambar resolusi tinggi...', '⏳');
@@ -1009,7 +1048,7 @@
 
           await navigator.clipboard.writeText(result.url);
           showToast('Upload berhasil. Link disalin!', '✅');
-          window.prompt('Link FiveManage (sudah disalin):', result.url);
+          showInvoiceLinkPopup(result.url);
         } else {
           const downloadLink = document.createElement('a');
           downloadLink.download = filename;

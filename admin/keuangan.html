@@ -804,6 +804,13 @@
       <img id="documentPhotoViewerImage" src="" alt="Foto dokumen ukuran penuh">
     </div>
 
+    <div id="appPopup" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/75 p-4 backdrop-blur-sm" role="alertdialog" aria-modal="true" aria-labelledby="appPopupTitle" aria-describedby="appPopupMessage">
+      <div class="portal-card w-full max-w-md rounded-2xl border border-amber-500/30 p-5 shadow-2xl sm:p-6">
+        <div class="flex items-start gap-3"><span id="appPopupIcon" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300"><i class="fa-solid fa-circle-info"></i></span><div class="min-w-0 flex-1"><h3 id="appPopupTitle" class="font-luxury text-lg font-bold text-amber-100">Notifikasi</h3><p id="appPopupMessage" class="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-300"></p></div><button id="appPopupClose" type="button" class="rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="mt-6 flex justify-end gap-2"><button id="appPopupCancel" type="button" class="hidden rounded-xl border border-slate-600 px-4 py-2.5 text-xs font-semibold text-slate-300 transition hover:bg-white/10">Batal</button><button id="appPopupConfirm" type="button" class="rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-amber-400">Mengerti</button></div>
+      </div>
+    </div>
+
   </main>
 
   <!-- FOOTER -->
@@ -812,6 +819,36 @@
   </footer>
 
   <script>
+    let appPopupResolver = null;
+    function showAppPopup({ title = 'Notifikasi', message = '', icon = 'fa-circle-info', confirmText = 'Mengerti', cancelText = 'Batal', showCancel = false } = {}) {
+      return new Promise(resolve => {
+        appPopupResolver = resolve;
+        document.getElementById('appPopupTitle').textContent = title;
+        document.getElementById('appPopupMessage').textContent = message;
+        document.getElementById('appPopupIcon').innerHTML = `<i class="fa-solid ${icon}"></i>`;
+        document.getElementById('appPopupConfirm').textContent = confirmText;
+        document.getElementById('appPopupCancel').textContent = cancelText;
+        document.getElementById('appPopupCancel').classList.toggle('hidden', !showCancel);
+        document.getElementById('appPopup').classList.remove('hidden');
+        document.getElementById('appPopup').classList.add('flex');
+        document.body.classList.add('overflow-hidden');
+        document.getElementById(showCancel ? 'appPopupCancel' : 'appPopupConfirm').focus();
+      });
+    }
+    function closeAppPopup(confirmed) {
+      const popup = document.getElementById('appPopup');
+      popup.classList.add('hidden');
+      popup.classList.remove('flex');
+      document.body.classList.remove('overflow-hidden');
+      if (appPopupResolver) appPopupResolver(confirmed);
+      appPopupResolver = null;
+    }
+    document.getElementById('appPopupConfirm').addEventListener('click', () => closeAppPopup(true));
+    document.getElementById('appPopupCancel').addEventListener('click', () => closeAppPopup(false));
+    document.getElementById('appPopupClose').addEventListener('click', () => closeAppPopup(false));
+    document.getElementById('appPopup').addEventListener('click', event => { if (event.target.id === 'appPopup') closeAppPopup(false); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && appPopupResolver) closeAppPopup(false); });
+
     const SUPABASE_URL = 'https://rdnhbqufxidbdwmxxabf.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_e1eww7RhRX3_l95kwvyM4Q_LysMicKv';
     const DISCORD_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/send-discord`;
@@ -953,17 +990,17 @@ Catatan tambahan: ${catatan}`;
       const photos = Array.from(event.target.files);
       if (!photos.length) return;
       if (photos.length > 5) {
-        alert('Maksimal 5 foto yang dapat dilampirkan.');
+        showAppPopup({ title: 'Terlalu Banyak Foto', message: 'Maksimal 5 foto yang dapat dilampirkan.', icon: 'fa-images' });
         clearDiscordPhoto();
         return;
       }
       if (photos.some(photo => !photo.type.startsWith('image/'))) {
-        alert('Semua lampiran harus berupa file gambar.');
+        showAppPopup({ title: 'Format File Tidak Sesuai', message: 'Semua lampiran harus berupa file gambar.', icon: 'fa-file-image' });
         clearDiscordPhoto();
         return;
       }
       if (photos.some(photo => photo.size > 8 * 1024 * 1024)) {
-        alert('Ukuran setiap foto maksimal 8 MB.');
+        showAppPopup({ title: 'Ukuran Foto Terlalu Besar', message: 'Ukuran setiap foto maksimal 8 MB.', icon: 'fa-weight-hanging' });
         clearDiscordPhoto();
         return;
       }
@@ -999,7 +1036,7 @@ Catatan tambahan: ${catatan}`;
         btn.innerHTML = '<i class="fa-solid fa-check"></i> Terkirim';
         setTimeout(() => { btn.innerHTML = originalLabel; }, 2500);
       } catch (error) {
-        alert(`Gagal mengirim ke Discord: ${error.message}`);
+        showAppPopup({ title: 'Gagal Mengirim ke Discord', message: error.message, icon: 'fa-circle-exclamation' });
         btn.innerHTML = originalLabel;
       } finally {
         btn.disabled = false;
@@ -1205,7 +1242,7 @@ Catatan tambahan: ${catatan}`;
     window.resendHistory = async function(id) {
       const item = historyData.find(historyItem => String(historyItem.id) === String(id));
       if (!item) return;
-      if (!confirm('Kirim ulang riwayat ini ke Discord?')) return;
+      if (!(await showAppPopup({ title: 'Kirim Ulang Riwayat', message: 'Kirim ulang riwayat ini ke Discord?', icon: 'fa-brands fa-discord', confirmText: 'Kirim Ulang', showCancel: true }))) return;
 
       try {
         const payload = {
@@ -1218,9 +1255,9 @@ Catatan tambahan: ${catatan}`;
         }
 
         await sendDiscordMessage(payload);
-        alert('Riwayat berhasil dikirim ulang ke Discord.');
+        showAppPopup({ title: 'Riwayat Terkirim', message: 'Riwayat berhasil dikirim ulang ke Discord.', icon: 'fa-circle-check' });
       } catch (error) {
-        alert(`Gagal mengirim ulang: ${error.message}`);
+        showAppPopup({ title: 'Gagal Mengirim Ulang', message: error.message, icon: 'fa-circle-exclamation' });
       }
     };
 
@@ -1230,7 +1267,7 @@ Catatan tambahan: ${catatan}`;
       try {
         photoData = await uploadSelectedPhoto();
       } catch (error) {
-        alert(`Gagal menyimpan foto: ${error.message}`);
+        showAppPopup({ title: 'Gagal Menyimpan Foto', message: error.message, icon: 'fa-circle-exclamation' });
         return;
       }
 
@@ -1255,19 +1292,19 @@ Catatan tambahan: ${catatan}`;
           }
         });
       } catch (error) {
-        alert(`Gagal menyimpan data: ${error.message}`);
+        showAppPopup({ title: 'Gagal Menyimpan Data', message: error.message, icon: 'fa-circle-exclamation' });
         return;
       }
 
       await loadHistory();
-      alert('Data rekapitulasi berhasil disimpan ke riwayat online!');
+      showAppPopup({ title: 'Data Tersimpan', message: 'Data rekapitulasi berhasil disimpan ke riwayat online.', icon: 'fa-circle-check' });
     });
 
     window.deleteHistory = async function(id) {
-      if(confirm('Hapus baris data riwayat ini?')) {
+      if(await showAppPopup({ title: 'Hapus Riwayat', message: 'Hapus baris data riwayat ini?', icon: 'fa-trash', confirmText: 'Hapus', showCancel: true })) {
         const { error } = await supabaseClient.from('riwayat_keuangan').delete().eq('id', id);
         if (error) {
-          alert(`Gagal menghapus data: ${error.message}`);
+          showAppPopup({ title: 'Gagal Menghapus Data', message: error.message, icon: 'fa-circle-exclamation' });
           return;
         }
         await loadHistory();
@@ -1275,13 +1312,13 @@ Catatan tambahan: ${catatan}`;
     };
 
     document.getElementById('btnClearAll').addEventListener('click', async () => {
-      if(confirm('Apakah Anda yakin ingin menghapus seluruh riwayat rekap keuangan?')) {
+      if(await showAppPopup({ title: 'Hapus Semua Riwayat', message: 'Apakah Anda yakin ingin menghapus seluruh riwayat rekap keuangan? Tindakan ini tidak dapat dibatalkan.', icon: 'fa-trash', confirmText: 'Hapus Semua', showCancel: true })) {
         const { error } = await supabaseClient
           .from('riwayat_keuangan')
           .delete()
           .not('id', 'is', null);
         if (error) {
-          alert(`Gagal menghapus riwayat: ${error.message}`);
+          showAppPopup({ title: 'Gagal Menghapus Riwayat', message: error.message, icon: 'fa-circle-exclamation' });
           return;
         }
         await loadHistory();
