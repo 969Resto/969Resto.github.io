@@ -264,6 +264,46 @@ serve(async (request) => {
       return jsonResponse({ success: true }, 201, origin);
     }
 
+    if (input && typeof input === "object" && ["delete_history", "clear_history"].includes(String((input as Record<string, unknown>).action))) {
+      const action = String((input as Record<string, unknown>).action);
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (!serviceRoleKey) {
+        return jsonResponse({ error: "Konfigurasi penghapusan riwayat belum lengkap." }, 500, origin);
+      }
+
+      const deleteUrl = new URL(`${supabaseUrl}/rest/v1/riwayat_keuangan`);
+      if (action === "delete_history") {
+        const rawId = (input as Record<string, unknown>).id;
+        const id = typeof rawId === "string" || typeof rawId === "number" ? String(rawId) : "";
+        if (!/^[A-Za-z0-9_-]{1,128}$/.test(id)) {
+          return jsonResponse({ error: "ID riwayat tidak valid." }, 400, origin);
+        }
+        deleteUrl.searchParams.set("id", `eq.${id}`);
+      } else {
+        deleteUrl.searchParams.set("id", "not.is.null");
+      }
+
+      try {
+        const databaseResponse = await fetch(deleteUrl, {
+          method: "DELETE",
+          headers: {
+            apikey: serviceRoleKey,
+            Authorization: `Bearer ${serviceRoleKey}`,
+            Prefer: "return=minimal"
+          },
+          redirect: "error"
+        });
+        if (!databaseResponse.ok) {
+          console.error("History delete failed:", await databaseResponse.text());
+          return jsonResponse({ error: "Database menolak penghapusan riwayat keuangan." }, 502, origin);
+        }
+      } catch {
+        return jsonResponse({ error: "Tidak dapat menghubungi database riwayat keuangan." }, 502, origin);
+      }
+
+      return jsonResponse({ success: true }, 200, origin);
+    }
+
     const webhookUrl = Deno.env.get("DISCORD_WEBHOOK_URL");
     if (!webhookUrl) {
       return jsonResponse({ error: "Webhook Discord belum dikonfigurasi di Supabase." }, 500, origin);
