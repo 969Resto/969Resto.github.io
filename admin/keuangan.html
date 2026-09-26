@@ -1328,7 +1328,7 @@ Catatan tambahan: ${catatan}`;
         if (error) throw error;
         await activateAdminSession(data.session);
       } catch (error) {
-        await supabaseClient.auth.signOut();
+        await supabaseClient.auth.signOut({ scope: 'local' });
         setAdminLoginError(error.message || 'Login admin gagal.');
       } finally {
         button.disabled = false;
@@ -1336,7 +1336,7 @@ Catatan tambahan: ${catatan}`;
     });
 
     document.getElementById('btnAdminLogout').addEventListener('click', async () => {
-      await supabaseClient.auth.signOut();
+      await supabaseClient.auth.signOut({ scope: 'local' });
       document.body.classList.remove('admin-authenticated');
       document.getElementById('adminLoginGate').classList.remove('hidden');
       document.getElementById('btnAdminLogout').classList.add('hidden');
@@ -1349,7 +1349,7 @@ Catatan tambahan: ${catatan}`;
       try {
         await activateAdminSession(data.session);
       } catch (sessionError) {
-        await supabaseClient.auth.signOut();
+        await supabaseClient.auth.signOut({ scope: 'local' });
         setAdminLoginError(sessionError.message || 'Sesi admin tidak valid. Silakan login kembali.');
       }
     }
