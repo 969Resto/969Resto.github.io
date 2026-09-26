@@ -363,6 +363,12 @@
       border-left-color: #f0b93e;
     }
 
+    body:not(.admin-authenticated) > header,
+    body:not(.admin-authenticated) > main,
+    body:not(.admin-authenticated) > footer {
+      display: none;
+    }
+
     .history-detail-inline-item:nth-child(3),
     .history-detail-inline-item:nth-child(10) {
       border-left-color: #35d399;
@@ -483,6 +489,28 @@
 </head>
 <body class="flex flex-col justify-between min-h-screen p-4 sm:p-6 md:p-8">
 
+  <section id="adminLoginGate" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm" aria-labelledby="adminLoginTitle">
+    <div class="portal-card w-full max-w-sm rounded-2xl p-6 shadow-2xl">
+      <div class="mb-5 flex items-center gap-3">
+        <img src="../Invoice/logo.png" alt="969 Resto" class="h-11 w-11 rounded-xl border border-amber-500/30 bg-black/40 p-1 object-contain">
+        <div>
+          <h1 id="adminLoginTitle" class="font-luxury text-lg font-bold text-amber-200">Login Admin</h1>
+          <p class="text-xs text-slate-400">Masuk untuk membuka rangkuman keuangan.</p>
+        </div>
+      </div>
+      <form id="adminLoginForm" class="space-y-3">
+        <label class="block text-xs font-semibold text-slate-300" for="adminEmail">Email</label>
+        <input id="adminEmail" type="email" autocomplete="username" required class="w-full rounded-lg border border-amber-900/50 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-400">
+        <label class="block text-xs font-semibold text-slate-300" for="adminPassword">Password</label>
+        <input id="adminPassword" type="password" autocomplete="current-password" required class="w-full rounded-lg border border-amber-900/50 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-400">
+        <p id="adminLoginError" class="hidden text-sm text-red-300" role="alert"></p>
+        <button id="btnAdminLogin" type="submit" class="w-full rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-amber-400">
+          <i class="fa-solid fa-lock mr-1.5"></i> Masuk
+        </button>
+      </form>
+    </div>
+  </section>
+
   <!-- TOP HEADER -->
   <header class="max-w-7xl mx-auto w-full flex flex-col sm:flex-row items-center justify-between pb-6 mb-6 border-b border-amber-900/30 gap-4">
     <div class="flex items-center gap-4">
@@ -493,6 +521,9 @@
       </div>
     </div>
     <div class="flex items-center gap-3">
+      <button id="btnAdminLogout" type="button" class="hidden px-4 py-2 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-500/30 text-xs font-semibold text-red-200 transition">
+        <i class="fa-solid fa-right-from-bracket mr-1"></i> Keluar
+      </button>
       <a href="index.html" class="px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-amber-500/30 hover:border-amber-400 text-xs font-semibold text-amber-200/90 transition flex items-center gap-2 shadow-md">
         <i class="fa-solid fa-arrow-left"></i> Kembali ke Dashboard
       </a>
@@ -783,12 +814,34 @@
   <script>
     const SUPABASE_URL = 'https://rdnhbqufxidbdwmxxabf.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_e1eww7RhRX3_l95kwvyM4Q_LysMicKv';
-    const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1552926284055715881/qFlYILghamCQR4CeJTQXoFsG7ZiFA_ddP4aIuwkJoXpjBpqs6awOKwxFuD8TnMriYD3k';
+    const DISCORD_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/send-discord`;
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let selectedDiscordPhotos = [];
     let selectedDiscordPhotoUrls = [];
     const inputs = ['periode', 'saldoMingguan', 'saldoPembagian', 'modalDisimpan', 'reimburse', 'totalDitarik', 'kerjasama', 'catatan', 'namaPerangkum'];
     const fmt = (num) => '$' + Number(num || 0).toLocaleString('en-US');
+
+    async function sendDiscordMessage(payload, session) {
+      if (!session) {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) throw error;
+        session = data.session;
+      }
+      if (!session?.access_token) throw new Error('Sesi login berakhir. Silakan masuk kembali.');
+
+      const response = await fetch(DISCORD_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Pengiriman gagal (status ${response.status})`);
+      return result;
+    }
 
     function calculateValues() {
       const periode = document.getElementById('periode').value || '-';
@@ -927,11 +980,6 @@ Catatan tambahan: ${catatan}`;
     document.getElementById('btnRemoveDiscordPhoto').addEventListener('click', clearDiscordPhoto);
 
     document.getElementById('btnSendDiscord').addEventListener('click', async () => {
-      if (!DISCORD_WEBHOOK_URL) {
-        alert('Webhook Discord belum diatur. Isi nilai DISCORD_WEBHOOK_URL di bagian script terlebih dahulu.');
-        return;
-      }
-
       const btn = document.getElementById('btnSendDiscord');
       const originalLabel = btn.innerHTML;
       btn.disabled = true;
@@ -942,24 +990,12 @@ Catatan tambahan: ${catatan}`;
           username: '969 Resto',
           content: document.getElementById('discordMessage').textContent
         };
-        const request = selectedDiscordPhotos.length ? new FormData() : JSON.stringify(payload);
-        const requestOptions = {
-          method: 'POST',
-          body: request
-        };
-
         if (selectedDiscordPhotos.length) {
-          request.append('payload_json', JSON.stringify(payload));
-          selectedDiscordPhotos.forEach((photo, index) => {
-            request.append(`files[${index}]`, photo, photo.name);
-          });
-        } else {
-          requestOptions.headers = { 'Content-Type': 'application/json' };
+          const { fotoUrls } = await uploadSelectedPhoto();
+          payload.embeds = fotoUrls.map(url => ({ image: { url } }));
         }
 
-        const response = await fetch(DISCORD_WEBHOOK_URL, requestOptions);
-
-        if (!response.ok) throw new Error(`Discord mengembalikan status ${response.status}`);
+        await sendDiscordMessage(payload);
         btn.innerHTML = '<i class="fa-solid fa-check"></i> Terkirim';
         setTimeout(() => { btn.innerHTML = originalLabel; }, 2500);
       } catch (error) {
@@ -1174,10 +1210,6 @@ Catatan tambahan: ${catatan}`;
     window.resendHistory = async function(id) {
       const item = historyData.find(historyItem => String(historyItem.id) === String(id));
       if (!item) return;
-      if (!DISCORD_WEBHOOK_URL) {
-        alert('Webhook Discord belum diatur.');
-        return;
-      }
       if (!confirm('Kirim ulang riwayat ini ke Discord?')) return;
 
       try {
@@ -1190,12 +1222,7 @@ Catatan tambahan: ${catatan}`;
           payload.embeds = fotoUrls.map(url => ({ image: { url } }));
         }
 
-        const response = await fetch(DISCORD_WEBHOOK_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (!response.ok) throw new Error(`Discord mengembalikan status ${response.status}`);
+        await sendDiscordMessage(payload);
         alert('Riwayat berhasil dikirim ulang ke Discord.');
       } catch (error) {
         alert(`Gagal mengirim ulang: ${error.message}`);
@@ -1271,9 +1298,63 @@ Catatan tambahan: ${catatan}`;
       }
     }
 
-    // Inisialisasi awal
-    updateLivePreview();
-    loadHistory();
+    function setAdminLoginError(message) {
+      const errorElement = document.getElementById('adminLoginError');
+      errorElement.textContent = message;
+      errorElement.classList.toggle('hidden', !message);
+    }
+
+    async function activateAdminSession(session) {
+      await sendDiscordMessage({ action: 'verify' }, session);
+      document.body.classList.add('admin-authenticated');
+      document.getElementById('adminLoginGate').classList.add('hidden');
+      document.getElementById('btnAdminLogout').classList.remove('hidden');
+      setAdminLoginError('');
+      updateLivePreview();
+      await loadHistory();
+    }
+
+    document.getElementById('adminLoginForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      const button = document.getElementById('btnAdminLogin');
+      button.disabled = true;
+      setAdminLoginError('');
+
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email: document.getElementById('adminEmail').value.trim(),
+          password: document.getElementById('adminPassword').value
+        });
+        if (error) throw error;
+        await activateAdminSession(data.session);
+      } catch (error) {
+        await supabaseClient.auth.signOut();
+        setAdminLoginError(error.message || 'Login admin gagal.');
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.getElementById('btnAdminLogout').addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
+      document.body.classList.remove('admin-authenticated');
+      document.getElementById('adminLoginGate').classList.remove('hidden');
+      document.getElementById('btnAdminLogout').classList.add('hidden');
+      document.getElementById('adminLoginForm').reset();
+    });
+
+    async function initializeAdminSession() {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error || !data.session) return;
+      try {
+        await activateAdminSession(data.session);
+      } catch (sessionError) {
+        await supabaseClient.auth.signOut();
+        setAdminLoginError(sessionError.message || 'Sesi admin tidak valid. Silakan login kembali.');
+      }
+    }
+
+    initializeAdminSession();
   </script>
 </body>
 </html>
