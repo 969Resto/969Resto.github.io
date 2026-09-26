@@ -1022,13 +1022,8 @@ Catatan tambahan: ${catatan}`;
 
     // Riwayat online di Supabase
     async function getStoredData() {
-      const { data, error } = await supabaseClient
-        .from('riwayat_keuangan')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
+      const result = await sendDiscordMessage({ action: 'list_history' });
+      return Array.isArray(result.data) ? result.data : [];
     }
 
     let historyData = [];
