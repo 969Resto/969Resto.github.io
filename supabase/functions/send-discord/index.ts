@@ -194,6 +194,40 @@ serve(async (request) => {
       return jsonResponse({ success: true }, 200, origin);
     }
 
+    if (input && typeof input === "object" && (input as Record<string, unknown>).action === "list_history") {
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (!serviceRoleKey) {
+        return jsonResponse({ error: "Konfigurasi pembacaan riwayat belum lengkap." }, 500, origin);
+      }
+
+      const historyUrl = new URL(`${supabaseUrl}/rest/v1/riwayat_keuangan`);
+      historyUrl.searchParams.set("select", "*");
+      historyUrl.searchParams.set("order", "created_at.desc");
+      historyUrl.searchParams.set("limit", "1000");
+
+      try {
+        const databaseResponse = await fetch(historyUrl, {
+          headers: {
+            apikey: serviceRoleKey,
+            Authorization: `Bearer ${serviceRoleKey}`
+          },
+          redirect: "error"
+        });
+        if (!databaseResponse.ok) {
+          console.error("History query failed:", await databaseResponse.text());
+          return jsonResponse({ error: "Database menolak pembacaan riwayat keuangan." }, 502, origin);
+        }
+
+        const records: unknown = await databaseResponse.json();
+        if (!Array.isArray(records)) {
+          return jsonResponse({ error: "Format riwayat dari database tidak valid." }, 502, origin);
+        }
+        return jsonResponse({ data: records }, 200, origin);
+      } catch {
+        return jsonResponse({ error: "Tidak dapat menghubungi database riwayat keuangan." }, 502, origin);
+      }
+    }
+
     if (input && typeof input === "object" && (input as Record<string, unknown>).action === "save_history") {
       const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
       if (!serviceRoleKey) {
