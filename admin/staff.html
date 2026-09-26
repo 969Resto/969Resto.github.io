@@ -136,11 +136,48 @@
     </form>
   </div>
 
+  <div id="appPopup" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/75 p-4 backdrop-blur-sm" role="alertdialog" aria-modal="true" aria-labelledby="appPopupTitle" aria-describedby="appPopupMessage">
+    <div class="portal-card w-full max-w-md rounded-2xl border border-amber-500/30 p-5 shadow-2xl sm:p-6">
+      <div class="flex items-start gap-3"><span id="appPopupIcon" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300"><i class="fa-solid fa-circle-info"></i></span><div class="min-w-0 flex-1"><h3 id="appPopupTitle" class="font-luxury text-lg font-bold text-amber-100">Notifikasi</h3><p id="appPopupMessage" class="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-300"></p></div><button id="appPopupClose" type="button" class="rounded-lg p-2 text-slate-400 transition hover:bg-white/10 hover:text-white" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button></div>
+      <div class="mt-6 flex justify-end gap-2"><button id="appPopupCancel" type="button" class="hidden rounded-xl border border-slate-600 px-4 py-2.5 text-xs font-semibold text-slate-300 transition hover:bg-white/10">Batal</button><button id="appPopupConfirm" type="button" class="rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-amber-400">Mengerti</button></div>
+    </div>
+  </div>
+
   <footer class="mx-auto w-full max-w-7xl border-t border-amber-900/30 py-6 text-center text-xs text-slate-500">
     <p>&copy; 2026 <strong>969 Resto</strong> &bull; Internal Management System</p>
   </footer>
 
   <script>
+    let appPopupResolver = null;
+    function showAppPopup({ title = 'Notifikasi', message = '', icon = 'fa-circle-info', confirmText = 'Mengerti', cancelText = 'Batal', showCancel = false } = {}) {
+      return new Promise(resolve => {
+        appPopupResolver = resolve;
+        document.getElementById('appPopupTitle').textContent = title;
+        document.getElementById('appPopupMessage').textContent = message;
+        document.getElementById('appPopupIcon').innerHTML = `<i class="fa-solid ${icon}"></i>`;
+        document.getElementById('appPopupConfirm').textContent = confirmText;
+        document.getElementById('appPopupCancel').textContent = cancelText;
+        document.getElementById('appPopupCancel').classList.toggle('hidden', !showCancel);
+        document.getElementById('appPopup').classList.remove('hidden');
+        document.getElementById('appPopup').classList.add('flex');
+        document.body.classList.add('overflow-hidden');
+        document.getElementById(showCancel ? 'appPopupCancel' : 'appPopupConfirm').focus();
+      });
+    }
+    function closeAppPopup(confirmed) {
+      const popup = document.getElementById('appPopup');
+      popup.classList.add('hidden');
+      popup.classList.remove('flex');
+      document.body.classList.remove('overflow-hidden');
+      if (appPopupResolver) appPopupResolver(confirmed);
+      appPopupResolver = null;
+    }
+    document.getElementById('appPopupConfirm').addEventListener('click', () => closeAppPopup(true));
+    document.getElementById('appPopupCancel').addEventListener('click', () => closeAppPopup(false));
+    document.getElementById('appPopupClose').addEventListener('click', () => closeAppPopup(false));
+    document.getElementById('appPopup').addEventListener('click', event => { if (event.target.id === 'appPopup') closeAppPopup(false); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && appPopupResolver) closeAppPopup(false); });
+
     const SUPABASE_URL = 'https://rdnhbqufxidbdwmxxabf.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_e1eww7RhRX3_l95kwvyM4Q_LysMicKv';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -304,10 +341,10 @@
 
     window.deleteStaff = async function(id) {
       const staff = staffData.find(item => String(item.id) === String(id));
-      if (!staff || !confirm(`Hapus data ${staff.name}?`)) return;
+      if (!staff || !(await showAppPopup({ title: 'Hapus Staff', message: `Hapus data ${staff.name}? Tindakan ini tidak dapat dibatalkan.`, icon: 'fa-trash', confirmText: 'Hapus Staff', showCancel: true }))) return;
       const { error } = await supabaseClient.from('staff').delete().eq('id', id);
       if (error) {
-        alert(`Gagal menghapus staff: ${error.message}`);
+        showAppPopup({ title: 'Gagal Menghapus Staff', message: error.message, icon: 'fa-circle-exclamation' });
         return;
       }
       await setLastStaffUpdate();
@@ -337,7 +374,7 @@
         : supabaseClient.from('staff').insert(staff);
       const { error } = await request;
       if (error) {
-        alert(`Gagal menyimpan staff: ${error.message}`);
+        showAppPopup({ title: 'Gagal Menyimpan Staff', message: error.message, icon: 'fa-circle-exclamation' });
         return;
       }
       await setLastStaffUpdate();
