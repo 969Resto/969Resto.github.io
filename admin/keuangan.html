@@ -1302,26 +1302,23 @@ Catatan tambahan: ${catatan}`;
 
     window.deleteHistory = async function(id) {
       if(await showAppPopup({ title: 'Hapus Riwayat', message: 'Hapus baris data riwayat ini?', icon: 'fa-trash', confirmText: 'Hapus', showCancel: true })) {
-        const { error } = await supabaseClient.from('riwayat_keuangan').delete().eq('id', id);
-        if (error) {
+        try {
+          await sendDiscordMessage({ action: 'delete_history', id });
+          await loadHistory();
+        } catch (error) {
           showAppPopup({ title: 'Gagal Menghapus Data', message: error.message, icon: 'fa-circle-exclamation' });
-          return;
         }
-        await loadHistory();
       }
     };
 
     document.getElementById('btnClearAll').addEventListener('click', async () => {
       if(await showAppPopup({ title: 'Hapus Semua Riwayat', message: 'Apakah Anda yakin ingin menghapus seluruh riwayat rekap keuangan? Tindakan ini tidak dapat dibatalkan.', icon: 'fa-trash', confirmText: 'Hapus Semua', showCancel: true })) {
-        const { error } = await supabaseClient
-          .from('riwayat_keuangan')
-          .delete()
-          .not('id', 'is', null);
-        if (error) {
+        try {
+          await sendDiscordMessage({ action: 'clear_history' });
+          await loadHistory();
+        } catch (error) {
           showAppPopup({ title: 'Gagal Menghapus Riwayat', message: error.message, icon: 'fa-circle-exclamation' });
-          return;
         }
-        await loadHistory();
       }
     });
 
