@@ -92,6 +92,60 @@ function normalizePayload(value: unknown) {
   return payload;
 }
 
+function normalizeHistoryRecord(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Data riwayat tidak valid.");
+  }
+
+  const record = value as Record<string, unknown>;
+  const textFields = ["periode", "catatan", "nama_perangkum"] as const;
+  const numberFields = [
+    "saldo",
+    "saldo_pembagian",
+    "modal",
+    "reimburse",
+    "ditarik",
+    "kerjasama",
+    "setoran",
+    "gaji_pokok",
+    "total_gaji"
+  ] as const;
+
+  if (
+    typeof record.periode !== "string" || typeof record.catatan !== "string" ||
+    typeof record.nama_perangkum !== "string"
+  ) {
+    throw new Error("Data riwayat tidak valid.");
+  }
+  if (record.periode.length > 100 || record.catatan.length > 5000 || record.nama_perangkum.length > 200) {
+    throw new Error("Panjang data riwayat melebihi batas.");
+  }
+
+  for (const field of numberFields) {
+    if (typeof record[field] !== "number" || !Number.isFinite(record[field])) {
+      throw new Error("Data angka riwayat tidak valid.");
+    }
+  }
+
+  const fotoUrls = record.foto_urls;
+  const fotoPaths = record.foto_paths;
+  if (
+    !Array.isArray(fotoUrls) || !Array.isArray(fotoPaths) || fotoUrls.length > 5 ||
+    fotoUrls.length !== fotoPaths.length ||
+    !fotoUrls.every((url) => typeof url === "string" && url.length <= 2048) ||
+    !fotoPaths.every((path) => typeof path === "string" && path.length <= 512)
+  ) {
+    throw new Error("Daftar foto riwayat tidak valid.");
+  }
+
+  return Object.fromEntries([
+    ...textFields.map((field) => [field, record[field]]),
+    ...numberFields.map((field) => [field, record[field]]),
+    ["foto_urls", fotoUrls],
+    ["foto_paths", fotoPaths]
+  ]);
+}
+
 serve(async (request) => {
   const origin = request.headers.get("Origin");
   if (!origin || !allowedOrigins.has(origin)) {
@@ -138,6 +192,42 @@ serve(async (request) => {
 
     if (input && typeof input === "object" && (input as Record<string, unknown>).action === "verify") {
       return jsonResponse({ success: true }, 200, origin);
+    }
+
+    if (input && typeof input === "object" && (input as Record<string, unknown>).action === "save_history") {
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (!serviceRoleKey) {
+        return jsonResponse({ error: "Konfigurasi penyimpanan riwayat belum lengkap." }, 500, origin);
+      }
+
+      let record: Record<string, unknown>;
+      try {
+        record = normalizeHistoryRecord((input as Record<string, unknown>).record);
+      } catch (error) {
+        return jsonResponse({ error: error instanceof Error ? error.message : "Data riwayat tidak valid." }, 400, origin);
+      }
+
+      try {
+        const databaseResponse = await fetch(`${supabaseUrl}/rest/v1/riwayat_keuangan`, {
+          method: "POST",
+          headers: {
+            apikey: serviceRoleKey,
+            Authorization: `Bearer ${serviceRoleKey}`,
+            "Content-Type": "application/json",
+            Prefer: "return=minimal"
+          },
+          body: JSON.stringify(record),
+          redirect: "error"
+        });
+        if (!databaseResponse.ok) {
+          console.error("History insert failed:", await databaseResponse.text());
+          return jsonResponse({ error: "Database menolak penyimpanan riwayat keuangan." }, 502, origin);
+        }
+      } catch {
+        return jsonResponse({ error: "Tidak dapat menghubungi database riwayat keuangan." }, 502, origin);
+      }
+
+      return jsonResponse({ success: true }, 201, origin);
     }
 
     const webhookUrl = Deno.env.get("DISCORD_WEBHOOK_URL");

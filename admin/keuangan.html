@@ -1239,24 +1239,27 @@ Catatan tambahan: ${catatan}`;
         return;
       }
 
-      const { error } = await supabaseClient.from('riwayat_keuangan').insert({
-        periode: d.periode,
-        saldo: d.saldo,
-        saldo_pembagian: d.saldoPembagian,
-        modal: d.modal,
-        reimburse: d.reimburse,
-        ditarik: d.ditarik,
-        kerjasama: d.kerjasama,
-        setoran: d.setoran,
-        gaji_pokok: d.gajiPokok,
-        total_gaji: d.totalGaji,
-        catatan: d.catatan,
-        nama_perangkum: d.namaPerangkum,
-        foto_urls: photoData.fotoUrls,
-        foto_paths: photoData.fotoPaths
-      });
-
-      if (error) {
+      try {
+        await sendDiscordMessage({
+          action: 'save_history',
+          record: {
+            periode: d.periode,
+            saldo: d.saldo,
+            saldo_pembagian: d.saldoPembagian,
+            modal: d.modal,
+            reimburse: d.reimburse,
+            ditarik: d.ditarik,
+            kerjasama: d.kerjasama,
+            setoran: d.setoran,
+            gaji_pokok: d.gajiPokok,
+            total_gaji: d.totalGaji,
+            catatan: d.catatan,
+            nama_perangkum: d.namaPerangkum,
+            foto_urls: photoData.fotoUrls,
+            foto_paths: photoData.fotoPaths
+          }
+        });
+      } catch (error) {
         alert(`Gagal menyimpan data: ${error.message}`);
         return;
       }
