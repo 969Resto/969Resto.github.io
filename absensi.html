@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>969 Resto - Absensi Karyawan</title>
+  <link rel="icon" type="image/png" href="Invoice/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #080303; color: #fdfbf7; min-height: 100vh; background-image: radial-gradient(circle at 50% 0%, rgba(136, 19, 19, 0.4) 0%, transparent 60%), radial-gradient(circle at 90% 90%, rgba(16, 120, 90, 0.12) 0%, transparent 48%); }
+    .font-luxury { font-family: 'Cinzel', Georgia, serif; }
+    .portal-card { background: linear-gradient(145deg, rgba(28, 12, 12, 0.86), rgba(18, 6, 6, 0.94)); border: 1px solid rgba(212, 175, 55, 0.25); backdrop-filter: blur(16px); }
+    .gold-gradient-text { background: linear-gradient(135deg, #fff0b3, #d4af37 50%, #aa8010); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .attendance-table th { white-space: nowrap; }
+    .attendance-table tbody tr { transition: background-color 0.2s ease; }
+    .attendance-table tbody tr:hover { background-color: rgba(120, 53, 15, 0.18); }
+    .field-dark { background: rgba(2, 6, 23, 0.8); border: 1px solid rgba(120, 53, 15, 0.5); color: #f1f5f9; }
+    .field-dark:focus { border-color: #d4af37; outline: none; }
+  </style>
+</head>
+<body class="min-h-screen p-4 sm:p-6 md:p-8">
+  <header class="mx-auto flex w-full max-w-7xl flex-col gap-4 border-b border-amber-900/30 pb-6 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex items-center gap-4">
+      <img src="Invoice/logo.png" alt="969 Resto" class="h-12 w-12 rounded-xl border border-amber-500/30 bg-black/40 object-contain p-1 shadow-lg">
+      <div>
+        <h1 class="font-luxury text-xl font-bold tracking-wider text-amber-100 sm:text-2xl">969 RESTO</h1>
+        <p class="mt-1 text-xs uppercase tracking-widest text-amber-200/60">Absensi Karyawan</p>
+      </div>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="btnAdminTools" type="button" class="rounded-lg border border-amber-500/40 bg-amber-950/40 px-4 py-2 text-xs font-semibold text-amber-200 transition hover:bg-amber-900/50" title="Buka kontrol admin absensi">
+        <i class="fa-solid fa-lock mr-1"></i> Admin
+      </button>
+      <a href="./admin/" class="rounded-lg border border-amber-500/30 bg-slate-900/80 px-4 py-2 text-xs font-semibold text-amber-200 transition hover:border-amber-400 hover:bg-slate-800">
+        <i class="fa-solid fa-arrow-left mr-1"></i> Portal Admin
+      </a>
+      <a href="./index.html" class="rounded-lg border border-slate-600 bg-slate-900/80 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-400 hover:bg-slate-800">
+        <i class="fa-solid fa-house mr-1"></i> Dashboard Utama
+      </a>
+    </div>
+  </header>
+
+  <main class="mx-auto w-full max-w-7xl space-y-6 py-8">
+    <section class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">Manajemen Tim</p>
+        <h2 class="font-luxury text-2xl font-bold text-slate-100 sm:text-3xl">Pembukuan Absensi Mingguan</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">Periode pembukuan berjalan Senin sampai Minggu. Pilih hari untuk mengisi jam shift secara manual.</p>
+      </div>
+      <div class="flex flex-wrap items-end gap-3">
+        <p class="text-xs text-slate-400">Periode <span id="weekRange" class="ml-1 font-semibold text-amber-200"></span></p>
+        <label class="text-xs font-semibold text-amber-300">Hari absensi
+          <select id="attendanceDate" class="field-dark mt-1 block min-w-44 rounded-lg px-3 py-2.5 text-sm"></select>
+        </label>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Ringkasan absensi">
+      <div class="portal-card rounded-lg p-4"><p class="text-[10px] uppercase tracking-wider text-amber-300">Staff Aktif</p><strong id="totalStaff" class="mt-1 block text-2xl text-white">-</strong></div>
+      <div class="portal-card rounded-lg p-4"><p class="text-[10px] uppercase tracking-wider text-emerald-300">Jam Mingguan</p><strong id="totalHours" class="mt-1 block text-2xl text-emerald-300">0:00</strong></div>
+      <div class="portal-card rounded-lg p-4"><p class="text-[10px] uppercase tracking-wider text-sky-300">Shift Mingguan</p><strong id="recordedShifts" class="mt-1 block text-2xl text-sky-300">0</strong></div>
+      <div class="portal-card rounded-lg p-4"><p class="text-[10px] uppercase tracking-wider text-amber-300">Belum Absen</p><strong id="notStartedStaff" class="mt-1 block text-2xl text-amber-300">0</strong></div>
+    </section>
+
+    <section class="flex flex-col gap-3 border-y border-amber-900/30 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <label class="relative block">
+        <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-500"></i>
+        <input id="searchStaff" type="search" placeholder="Cari nama atau jabatan..." class="field-dark w-full rounded-lg py-2.5 pl-9 pr-3 text-xs sm:w-72">
+      </label>
+      <p id="saveNotice" class="text-xs text-amber-200" role="status" aria-live="polite">Memuat data staff...</p>
+    </section>
+
+    <section class="portal-card overflow-hidden rounded-xl">
+      <div class="overflow-x-auto">
+        <table class="attendance-table w-full min-w-[900px] border-collapse text-left text-xs text-slate-300">
+          <thead class="bg-amber-950/30 text-[10px] uppercase tracking-wider text-amber-300">
+            <tr class="border-b border-amber-900/40">
+              <th class="px-5 py-4">No</th>
+              <th class="px-5 py-4">Nama Staff</th>
+              <th class="px-5 py-4">Input Manual</th>
+              <th class="px-5 py-4">Riwayat Shift Hari Terpilih</th>
+              <th class="whitespace-nowrap px-3 py-4 text-center">Total Mingguan</th>
+            </tr>
+          </thead>
+          <tbody id="attendanceBody" class="divide-y divide-amber-900/20">
+            <tr><td colspan="5" class="px-5 py-12 text-center text-slate-400">Memuat data staff...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <p class="text-[11px] leading-relaxed text-slate-500"><i class="fa-solid fa-circle-info mr-1 text-amber-400"></i><span id="storageNotice">Menghubungkan absensi ke Nhost...</span></p>
+  </main>
+
+  <dialog id="deleteShiftDialog" class="w-full max-w-md rounded-xl border border-rose-500/30 bg-slate-950 p-0 text-slate-100 shadow-2xl backdrop:bg-black/75 backdrop:backdrop-blur-sm" aria-labelledby="deleteShiftTitle" aria-describedby="deleteShiftMessage">
+    <div class="p-5 sm:p-6">
+      <div class="flex items-start gap-3">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300"><i class="fa-solid fa-trash-can"></i></span>
+        <div>
+          <h3 id="deleteShiftTitle" class="font-luxury text-lg font-bold text-rose-100">Hapus Shift?</h3>
+          <p id="deleteShiftMessage" class="mt-2 text-sm leading-relaxed text-slate-300"></p>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end gap-2">
+        <button id="cancelDeleteShift" type="button" class="rounded-lg border border-slate-600 px-4 py-2.5 text-xs font-semibold text-slate-300 transition hover:bg-white/10">Batal</button>
+        <button id="confirmDeleteShift" type="button" class="rounded-lg bg-rose-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-rose-500">Hapus Shift</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="adminToolsDialog" class="w-full max-w-xl rounded-xl border border-amber-500/30 bg-slate-950 p-0 text-slate-100 shadow-2xl backdrop:bg-black/75 backdrop:backdrop-blur-sm" aria-labelledby="adminToolsTitle">
+    <div class="p-5 sm:p-6">
+      <div class="mb-5 flex items-start justify-between border-b border-amber-900/30 pb-4">
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-amber-400">Akses Terbatas</p>
+          <h3 id="adminToolsTitle" class="mt-1 font-luxury text-lg font-bold text-amber-100">Kontrol Admin Absensi</h3>
+        </div>
+        <button id="closeAdminTools" type="button" class="rounded-md p-2 text-slate-400 transition hover:bg-white/10 hover:text-white" aria-label="Tutup kontrol admin"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="adminLoginForm" class="space-y-3">
+        <label for="adminEmail" class="block text-xs font-semibold text-amber-300">Email Admin</label>
+        <input id="adminEmail" type="email" autocomplete="username" class="field-dark w-full rounded-lg px-3 py-2.5 text-sm" required>
+        <label for="adminPassword" class="block text-xs font-semibold text-amber-300">Password</label>
+        <input id="adminPassword" type="password" autocomplete="current-password" class="field-dark w-full rounded-lg px-3 py-2.5 text-sm" required>
+        <p id="adminLoginStatus" class="hidden text-xs text-rose-300" role="alert"></p>
+        <div class="flex justify-end">
+          <button id="adminLoginSubmit" type="submit" class="rounded-lg bg-amber-500 px-4 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-amber-400"><i class="fa-solid fa-right-to-bracket mr-1"></i>Masuk Admin</button>
+        </div>
+      </form>
+      <section id="adminControls" class="hidden space-y-5">
+        <div class="border-b border-amber-900/30 pb-5">
+          <label for="weekStart" class="block text-xs font-semibold text-amber-300">Pilih minggu pembukuan</label>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <input id="weekStart" type="date" class="field-dark rounded-lg px-3 py-2.5 text-sm [color-scheme:dark]">
+            <button id="applyWeek" type="button" class="rounded-lg border border-amber-500/40 px-4 py-2.5 text-xs font-semibold text-amber-200 transition hover:bg-amber-900/40"><i class="fa-solid fa-calendar-check mr-1"></i>Terapkan</button>
+          </div>
+          <p class="mt-2 text-[11px] text-slate-500">Tanggal akan disesuaikan ke hari Senin pada minggu tersebut.</p>
+        </div>
+        <div class="flex flex-col gap-3 border-b border-amber-900/30 pb-5 sm:flex-row sm:items-center sm:justify-between">
+          <p id="staffSnapshotStatus" class="text-xs text-slate-400">Roster absensi mengikuti snapshot staff tersimpan.</p>
+          <div class="flex flex-wrap gap-2">
+            <button id="refreshStaff" type="button" class="whitespace-nowrap rounded-lg border border-amber-500/40 bg-amber-950/40 px-4 py-2.5 text-xs font-semibold text-amber-200 transition hover:bg-amber-900/50"><i class="fa-solid fa-rotate mr-1"></i>Perbarui Staff</button>
+            <button id="logoutAdmin" type="button" class="whitespace-nowrap rounded-lg border border-rose-500/40 bg-rose-950/30 px-4 py-2.5 text-xs font-semibold text-rose-200 transition hover:bg-rose-900/40"><i class="fa-solid fa-right-from-bracket mr-1"></i>Keluar Admin</button>
+          </div>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <button id="saveWeeklyRecap" type="button" class="rounded-lg border border-emerald-500/40 bg-emerald-950/40 px-4 py-3 text-left text-xs font-semibold text-emerald-200 transition hover:bg-emerald-900/50"><i class="fa-solid fa-floppy-disk mr-2"></i>Simpan Rekap Mingguan</button>
+          <a href="./admin/absensi-history.html" class="rounded-lg border border-sky-500/40 bg-sky-950/40 px-4 py-3 text-left text-xs font-semibold text-sky-200 transition hover:bg-sky-900/50"><i class="fa-solid fa-clock-rotate-left mr-2"></i>Riwayat Rekap</a>
+          <button id="btnExport" type="button" class="rounded-lg border border-emerald-500/40 bg-emerald-950/40 px-4 py-3 text-left text-xs font-semibold text-emerald-300 transition hover:bg-emerald-900/50"><i class="fa-solid fa-file-export mr-2"></i>Ekspor CSV</button>
+          <button id="requestWeekReset" type="button" class="rounded-lg border border-rose-500/40 bg-rose-950/30 px-4 py-3 text-left text-xs font-semibold text-rose-200 transition hover:bg-rose-900/40"><i class="fa-solid fa-trash-can mr-2"></i>Reset Absensi Minggu Ini</button>
+        </div>
+        <div id="resetWeekConfirmation" class="hidden rounded-lg border border-rose-500/30 bg-rose-950/30 p-4">
+          <p class="text-xs leading-relaxed text-rose-100">Hapus semua absensi pada minggu <strong id="resetWeekRange"></strong>? Tindakan ini tidak dapat dibatalkan.</p>
+          <div class="mt-3 flex justify-end gap-2">
+            <button id="cancelWeekReset" type="button" class="rounded-md border border-slate-600 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-white/10">Batal</button>
+            <button id="confirmWeekReset" type="button" class="rounded-md bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-500">Ya, Reset Minggu</button>
+          </div>
+        </div>
+        <p id="adminStatus" class="text-xs text-slate-400" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+  </dialog>
+
+  <dialog id="adminActionDialog" class="w-full max-w-md rounded-xl border border-amber-500/30 bg-slate-950 p-0 text-slate-100 shadow-2xl backdrop:bg-black/75 backdrop:backdrop-blur-sm" aria-labelledby="adminActionTitle" aria-describedby="adminActionMessage">
+    <div class="p-5 sm:p-6">
+      <div class="flex items-start gap-3">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300"><i class="fa-solid fa-circle-question"></i></span>
+        <div>
+          <h3 id="adminActionTitle" class="font-luxury text-lg font-bold text-amber-100">Konfirmasi Admin</h3>
+          <p id="adminActionMessage" class="mt-2 text-sm leading-relaxed text-slate-300"></p>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end gap-2">
+        <button id="cancelAdminAction" type="button" class="rounded-lg border border-slate-600 px-4 py-2.5 text-xs font-semibold text-slate-300 transition hover:bg-white/10">Batal</button>
+        <button id="confirmAdminAction" type="button" class="rounded-lg bg-amber-500 px-4 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-amber-400">Lanjutkan</button>
+      </div>
+    </div>
+  </dialog>
+
+  <footer class="mx-auto w-full max-w-7xl border-t border-amber-900/30 py-6 text-center text-xs text-slate-500">
+    <p>&copy; 2026 <strong>969 Resto</strong> &bull; Internal Management System</p>
+  </footer>
+
+  <script>
+    const SUPABASE_URL = 'https://rdnhbqufxidbdwmxxabf.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_e1eww7RhRX3_l95kwvyM4Q_LysMicKv';
+    const STAFF_SNAPSHOT_KEY = '969-resto-attendance-staff-snapshot';
+    const nhostModulePromise = import('./nhost/client.js');
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const attendanceBody = document.getElementById('attendanceBody');
+    const attendanceDate = document.getElementById('attendanceDate');
+    const weekStart = document.getElementById('weekStart');
+    const weekRange = document.getElementById('weekRange');
+    const searchStaff = document.getElementById('searchStaff');
+    const saveNotice = document.getElementById('saveNotice');
+    const roleOrder = ['CEO', 'CFO', 'Head Manager', 'Assistant Manager', 'Team Leader', 'Head Chef', 'Assistant Chef', 'Worker', 'Recruit'];
+    let staffList = [];
+    let attendanceRecords = {};
+    let weeklyRecords = {};
+    let weekDates = [];
+    let isAdminAuthenticated = false;
+    const editingStaffIds = new Set();
+    let pendingShiftDeletion = null;
+    let pendingAdminAction = null;
+    let onlineWeekLoadVersion = 0;
+
+    function localDateString(date = new Date()) {
+      const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+      return offsetDate.toISOString().slice(0, 10);
+    }
+
+    function draftStorageKey(date) {
+      return `969-resto-attendance-draft-${date}`;
+    }
+
+    function getWeekDates(date) {
+      const monday = new Date(`${date}T00:00:00`);
+      monday.setDate(monday.getDate() - (monday.getDay() + 6) % 7);
+      return Array.from({ length: 7 }, (_, dayIndex) => {
+        const day = new Date(monday);
+        day.setDate(monday.getDate() + dayIndex);
+        return localDateString(day);
+      });
+    }
+
+    function formatDateLabel(date, options = { day: '2-digit', month: 'short' }) {
+      return new Intl.DateTimeFormat('id-ID', options).format(new Date(`${date}T00:00:00`));
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[character]);
+    }
+
+    function currentRows() {
+      const query = searchStaff.value.trim().toLowerCase();
+      return staffList.filter(staff => `${staff.name} ${staff.role}`.toLowerCase().includes(query));
+    }
+
+    function getShifts(record) {
+      return Array.isArray(record.shifts) ? record.shifts : [];
+    }
+
+    function shiftSignature(shift) {
+      return `${shift.checkIn}|${shift.checkOut}`;
+    }
+
+    function attendanceMinutes(record) {
+      return getShifts(record).reduce((total, shift) => {
+        const start = new Date(shift.checkIn).getTime();
+        if (!shift.checkOut) return total;
+        const end = new Date(shift.checkOut).getTime();
+        if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return total;
+        return total + Math.floor((end - start) / 60000);
+      }, 0);
+    }
+
+    function formatClockTime(timestamp) {
+      return new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(timestamp));
+    }
+
+    function shiftSummary(record, staffId, isEditing) {
+      const shifts = getShifts(record);
+      const shiftList = shifts.map((shift, index) => {
+        const end = shift.checkOut ? formatClockTime(shift.checkOut) : 'Berjalan';
+        const deleteButton = isEditing
+          ? `<button type="button" data-delete-shift data-staff-id="${staffId}" data-shift-index="${index}" aria-label="Hapus shift ${index + 1}" title="Hapus shift ini" class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-rose-300 transition hover:bg-rose-500/15 hover:text-rose-200"><i class="fa-solid fa-trash-can"></i></button>`
+          : '';
+        return `<span class="flex items-center gap-2 whitespace-nowrap">Shift ${index + 1}: ${formatClockTime(shift.checkIn)} - ${end}${deleteButton}</span>`;
+      }).join('');
+      const editButton = (shifts.length && isAdminAuthenticated) || isEditing
+        ? `<button type="button" data-toggle-shift-edit data-staff-id="${staffId}" aria-pressed="${isEditing}" class="mt-1 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-semibold ${isEditing ? 'bg-amber-500/15 text-amber-200 hover:bg-amber-500/25' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'}"><i class="fa-solid ${isEditing ? 'fa-check' : 'fa-pen'}"></i>${isEditing ? 'Selesai' : 'Edit'}</button>`
+        : '';
+      return `<div class="space-y-1">${shiftList || '<span class="text-slate-500">Belum ada shift</span>'}${editButton}</div>`;
+    }
+
+    function formatDuration(minutes) {
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      return `${hours}:${String(remainingMinutes).padStart(2, '0')}`;
+    }
+
+    function renderAttendance() {
+      const rows = currentRows();
+      attendanceBody.innerHTML = rows.length ? rows.map((staff, index) => {
+        const record = attendanceRecords[staff.id] || {};
+        const weeklyTotal = weekDates.reduce((total, day) => total + attendanceMinutes(weeklyRecords[day]?.[staff.id] || {}), 0);
+        const id = escapeHtml(staff.id);
+        const pending = record.pending || {};
+        const isEditing = isAdminAuthenticated && editingStaffIds.has(staff.id);
+        return `<tr>
+          <td class="px-5 py-3 text-slate-500">${index + 1}</td>
+          <td class="px-5 py-3"><span class="block font-semibold text-slate-100">${escapeHtml(staff.name)}</span><span class="mt-1 block text-[11px] text-slate-500">${escapeHtml(staff.role)}</span></td>
+          <td class="px-5 py-3"><div class="flex flex-wrap items-end gap-2"><label class="text-[10px] text-slate-400">Masuk<input data-staff-id="${id}" data-field="checkIn" type="time" value="${escapeHtml(pending.checkIn || '')}" class="field-dark mt-1 block w-24 rounded-md px-2 py-2 [color-scheme:dark]"></label><label class="text-[10px] text-slate-400">Pulang<input data-staff-id="${id}" data-field="checkOut" type="time" value="${escapeHtml(pending.checkOut || '')}" class="field-dark mt-1 block w-24 rounded-md px-2 py-2 [color-scheme:dark]"></label><button type="button" data-attendance-action data-staff-id="${id}" class="whitespace-nowrap rounded-md border border-emerald-500/40 bg-emerald-950/50 px-3 py-2 font-semibold text-emerald-200 transition hover:bg-emerald-900/50"><i class="fa-solid fa-plus mr-1"></i>Tambah Absensi</button></div></td>
+          <td class="px-5 py-3 leading-6">${shiftSummary(record, id, isEditing)}</td>
+          <td id="total-${id}" class="whitespace-nowrap px-3 py-3 text-center text-sm font-bold text-emerald-300">${formatDuration(weeklyTotal)}</td>
+        </tr>`;
+      }).join('') : `<tr><td colspan="5" class="px-5 py-12 text-center text-slate-400">${staffList.length ? 'Staff tidak ditemukan.' : 'Belum ada staff aktif untuk ditampilkan.'}</td></tr>`;
+
+      updateSummary();
+    }
+
+    function updateSummary() {
+      let totalMinutes = 0;
+      let shiftCount = 0;
+      let notStartedCount = 0;
+      staffList.forEach(staff => {
+        const records = weekDates.map(day => weeklyRecords[day]?.[staff.id] || {});
+        const shifts = records.flatMap(getShifts);
+        const minutes = records.reduce((total, record) => total + attendanceMinutes(record), 0);
+        const totalCell = document.getElementById(`total-${staff.id}`);
+        totalMinutes += minutes;
+        shiftCount += shifts.length;
+        if (!shifts.length) notStartedCount += 1;
+        if (totalCell) totalCell.textContent = formatDuration(minutes);
+      });
+      document.getElementById('totalStaff').textContent = staffList.length;
+      document.getElementById('totalHours').textContent = formatDuration(totalMinutes);
+      document.getElementById('recordedShifts').textContent = shiftCount;
+      document.getElementById('notStartedStaff').textContent = notStartedCount;
+    }
+
+    async function recordAttendance(staffId) {
+      const record = attendanceRecords[staffId] || { shifts: [], note: '' };
+      const shifts = getShifts(record);
+      const pending = record.pending || {};
+      if (!pending.checkIn || !pending.checkOut) {
+        saveNotice.textContent = 'Isi jam masuk dan jam pulang sebelum menambahkan absensi.';
+        saveNotice.className = 'text-xs text-rose-300';
+        return;
+      }
+      const checkIn = new Date(`${attendanceDate.value}T${pending.checkIn}:00`);
+      let checkOut = new Date(`${attendanceDate.value}T${pending.checkOut}:00`);
+      if (checkOut < checkIn) checkOut.setDate(checkOut.getDate() + 1);
+      const staff = staffList.find(item => String(item.id) === String(staffId));
+      if (!staff) return;
+      saveNotice.textContent = 'Menyimpan shift ke Nhost...';
+      try {
+        const { requestAttendanceGraphql } = await nhostModulePromise;
+        const data = await requestAttendanceGraphql(`
+          mutation AddAttendanceShift($object: attendance_shifts_insert_input!) {
+            insert_attendance_shifts_one(object: $object) {
+              id staff_id staff_name staff_role duty_date check_in check_out
+            }
+          }
+        `, { object: {
+          staff_id: String(staff.id),
+          staff_name: staff.name,
+          staff_role: staff.role,
+          duty_date: attendanceDate.value,
+          check_in: checkIn.toISOString(),
+          check_out: checkOut.toISOString()
+        } });
+        const savedShift = data.insert_attendance_shifts_one;
+        shifts.push({ id: savedShift.id, checkIn: savedShift.check_in, checkOut: savedShift.check_out });
+        attendanceRecords[staffId] = { ...record, shifts, pending: { checkIn: '', checkOut: '' } };
+        saveDraft();
+        renderAttendance();
+        saveNotice.textContent = 'Shift tersimpan online di Nhost';
+        saveNotice.className = 'text-xs text-emerald-300';
+      } catch (error) {
+        saveNotice.textContent = `Gagal menyimpan ke Nhost: ${error.message}`;
+        saveNotice.className = 'text-xs text-rose-300';
+      }
+    }
+
+    async function deleteShift(staffId, shiftIndex) {
+      const record = attendanceRecords[staffId];
+      if (!record || !Number.isInteger(shiftIndex) || shiftIndex < 0 || shiftIndex >= getShifts(record).length) return;
+      if (!isAdminAuthenticated) return;
+      const shift = getShifts(record)[shiftIndex];
+      if (shift.id) {
+        try {
+          const { requestAttendanceGraphql } = await nhostModulePromise;
+          await requestAttendanceGraphql(`
+            mutation DeleteAttendanceShift($id: uuid!) {
+              delete_attendance_shifts_by_pk(id: $id) { id }
+            }
+          `, { id: shift.id }, 'attendance_admin');
+        } catch (error) {
+          document.getElementById('adminStatus').textContent = `Shift gagal dihapus: ${error.message}`;
+          return;
+        }
+      }
+      const shifts = getShifts(record).filter((shift, index) => index !== shiftIndex);
+      attendanceRecords[staffId] = { ...record, shifts };
+      saveDraft();
+      renderAttendance();
+    }
+
+    function requestDeleteShift(staffId, shiftIndex) {
+      if (!isAdminAuthenticated) return;
+      const staff = staffList.find(item => String(item.id) === String(staffId));
+      const record = attendanceRecords[staffId];
+      if (!staff || !record || shiftIndex < 0 || shiftIndex >= getShifts(record).length) return;
+      pendingShiftDeletion = { staffId, shiftIndex };
+      document.getElementById('deleteShiftMessage').textContent = `Yakin ingin menghapus shift ${shiftIndex + 1} milik ${staff.name}? Total absensi mingguan akan diperbarui.`;
+      document.getElementById('deleteShiftDialog').showModal();
+      document.getElementById('cancelDeleteShift').focus();
+    }
+
+    function saveDraft() {
+      try {
+        weeklyRecords[attendanceDate.value] = attendanceRecords;
+        localStorage.setItem(draftStorageKey(attendanceDate.value), JSON.stringify(attendanceRecords));
+        saveNotice.textContent = 'Draf tersimpan di browser ini';
+        saveNotice.className = 'text-xs text-emerald-300';
+      } catch (error) {
+        saveNotice.textContent = 'Draf gagal disimpan di browser';
+        saveNotice.className = 'text-xs text-rose-300';
+      }
+    }
+
+    function readDraft(date) {
+      const savedDraft = localStorage.getItem(draftStorageKey(date));
+      try {
+        const storedRecords = JSON.parse(savedDraft || '{}');
+        return Object.fromEntries(Object.entries(storedRecords).map(([staffId, storedRecord]) => {
+          const record = { ...storedRecord };
+          record.pending = { ...(record.pending || {}) };
+          if (!Array.isArray(record.shifts)) {
+            record.shifts = [];
+            if (record.checkIn) {
+              record.pending.checkIn = record.checkIn;
+              record.pending.checkOut = record.checkOut || '';
+            }
+          }
+          record.shifts = record.shifts.filter(shift => {
+            if (shift.checkOut || !shift.checkIn) return true;
+            record.pending.checkIn = record.pending.checkIn || formatClockTime(shift.checkIn);
+            return false;
+          });
+          delete record.status;
+          delete record.checkIn;
+          delete record.checkOut;
+          return [staffId, record];
+        }));
+      } catch (error) {
+        return {};
+      }
+
+    }
+
+    function loadWeekDrafts(preferredDate = '') {
+      weekDates = getWeekDates(weekStart.value || localDateString());
+      weekStart.value = weekDates[0];
+      weekRange.textContent = `${formatDateLabel(weekDates[0], { day: '2-digit', month: 'short', year: 'numeric' })} - ${formatDateLabel(weekDates[6], { day: '2-digit', month: 'short', year: 'numeric' })}`;
+      const dayNames = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+      attendanceDate.innerHTML = weekDates.map((date, dayIndex) => `<option value="${date}">${dayNames[dayIndex]}, ${formatDateLabel(date)}</option>`).join('');
+      attendanceDate.value = weekDates.includes(preferredDate) ? preferredDate : weekDates[0];
+      weeklyRecords = Object.fromEntries(weekDates.map(date => [date, readDraft(date)]));
+      attendanceRecords = weeklyRecords[attendanceDate.value] || {};
+      renderAttendance();
+      const hasDrafts = weekDates.some(date => Object.keys(weeklyRecords[date] || {}).length > 0);
+      saveNotice.textContent = hasDrafts ? 'Draf minggu dimuat dari browser ini' : 'Belum ada draf untuk minggu ini';
+      saveNotice.className = hasDrafts ? 'text-xs text-emerald-300' : 'text-xs text-slate-400';
+      loadOnlineAttendance(weekDates);
+    }
+
+    async function loadOnlineAttendance(requestedDates) {
+      const requestVersion = ++onlineWeekLoadVersion;
+      const startDate = requestedDates[0];
+      const endDate = requestedDates[6];
+      try {
+        const { requestAttendanceGraphql } = await nhostModulePromise;
+        const data = await requestAttendanceGraphql(`
+          query LoadAttendanceShifts($startDate: date!, $endDate: date!) {
+            attendance_shifts(
+              where: { duty_date: { _gte: $startDate, _lte: $endDate } }
+              order_by: [{ duty_date: asc }, { check_in: asc }]
+            ) {
+              id staff_id staff_name staff_role duty_date check_in check_out
+            }
+          }
+        `, { startDate, endDate });
+        if (requestVersion !== onlineWeekLoadVersion) return;
+
+        const nextWeekRecords = Object.fromEntries(requestedDates.map(date => {
+          const cachedRecords = weeklyRecords[date] || {};
+          return [date, Object.fromEntries(Object.entries(cachedRecords).map(([staffId, record]) => [staffId, { ...record, shifts: [] }]))];
+        }));
+        const onlineSignatures = new Set();
+        for (const shift of data.attendance_shifts || []) {
+          const record = nextWeekRecords[shift.duty_date][shift.staff_id] || { shifts: [], pending: {} };
+          record.shifts.push({ id: shift.id, checkIn: shift.check_in, checkOut: shift.check_out });
+          nextWeekRecords[shift.duty_date][shift.staff_id] = record;
+          onlineSignatures.add(`${shift.staff_id}|${shift.duty_date}|${shift.check_in}|${shift.check_out}`);
+        }
+
+        for (const date of requestedDates) {
+          const cachedRecords = weeklyRecords[date] || {};
+          for (const [staffId, cachedRecord] of Object.entries(cachedRecords)) {
+            const targetRecord = nextWeekRecords[date][staffId] || { ...cachedRecord, shifts: [], pending: cachedRecord.pending || {} };
+            for (const shift of getShifts(cachedRecord)) {
+              if (shift.id || !shift.checkIn || !shift.checkOut) continue;
+              const signature = `${staffId}|${date}|${shift.checkIn}|${shift.checkOut}`;
+              if (!onlineSignatures.has(signature)) targetRecord.shifts.push(shift);
+            }
+            nextWeekRecords[date][staffId] = targetRecord;
+          }
+        }
+
+        weeklyRecords = nextWeekRecords;
+        attendanceRecords = weeklyRecords[attendanceDate.value] || {};
+        for (const date of requestedDates) {
+          try {
+            localStorage.setItem(draftStorageKey(date), JSON.stringify(weeklyRecords[date]));
+          } catch (error) {
+            console.warn('Cache absensi tidak dapat disimpan:', error);
+          }
+        }
+        renderAttendance();
+        document.getElementById('storageNotice').textContent = 'Shift baru disimpan online di Nhost. Input jam yang belum ditambahkan tetap tersimpan di browser ini.';
+        saveNotice.textContent = `Data minggu dimuat dari Nhost (${data.attendance_shifts?.length || 0} shift online).`;
+        saveNotice.className = 'text-xs text-emerald-300';
+      } catch (error) {
+        if (requestVersion !== onlineWeekLoadVersion) return;
+        document.getElementById('storageNotice').textContent = 'Nhost belum dapat dijangkau; data cache browser tetap ditampilkan.';
+        saveNotice.textContent = `Gagal memuat absensi online: ${error.message}`;
+        saveNotice.className = 'text-xs text-rose-300';
+      }
+    }
+
+    function sortStaff(data) {
+      return (data || []).sort((first, second) => {
+        const firstRank = roleOrder.indexOf(first.role);
+        const secondRank = roleOrder.indexOf(second.role);
+        return (firstRank === -1 ? roleOrder.length : firstRank) - (secondRank === -1 ? roleOrder.length : secondRank);
+      });
+    }
+
+    function initializeAttendanceWeek() {
+      const today = localDateString();
+      weekStart.value = getWeekDates(today)[0];
+      loadWeekDrafts(today);
+    }
+
+    async function loadStaff({ refresh = false } = {}) {
+      if (!refresh) {
+        try {
+          const savedRoster = localStorage.getItem(STAFF_SNAPSHOT_KEY);
+          if (savedRoster !== null) {
+            const snapshot = JSON.parse(savedRoster);
+            if (Array.isArray(snapshot)) {
+              staffList = sortStaff(snapshot);
+              initializeAttendanceWeek();
+              return;
+            }
+          }
+        } catch (error) {
+          console.warn('Snapshot staff absensi tidak dapat dibaca:', error);
+        }
+      }
+
+      const refreshButton = document.getElementById('refreshStaff');
+      refreshButton.disabled = true;
+      document.getElementById('staffSnapshotStatus').textContent = 'Memuat data staff terbaru...';
+      const { data, error } = await supabaseClient
+        .from('staff')
+        .select('id, name, role, status')
+        .in('status', ['Aktif', 'Warning'])
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        document.getElementById('staffSnapshotStatus').textContent = `Gagal memperbarui staff: ${error.message}`;
+        refreshButton.disabled = false;
+        if (!staffList.length) {
+          attendanceBody.innerHTML = `<tr><td colspan="5" class="px-5 py-12 text-center text-rose-300">Gagal memuat data staff: ${escapeHtml(error.message)}</td></tr>`;
+          saveNotice.textContent = 'Data staff tidak dapat dimuat';
+          saveNotice.className = 'text-xs text-rose-300';
+          document.getElementById('totalStaff').textContent = '0';
+        }
+        return;
+      }
+
+      staffList = sortStaff(data);
+      try {
+        localStorage.setItem(STAFF_SNAPSHOT_KEY, JSON.stringify(staffList));
+      } catch (storageError) {
+        console.warn('Snapshot staff absensi tidak dapat disimpan:', storageError);
+      }
+      if (weekDates.length) {
+        editingStaffIds.clear();
+        renderAttendance();
+      } else {
+        initializeAttendanceWeek();
+      }
+      document.getElementById('staffSnapshotStatus').textContent = `Snapshot staff diperbarui (${staffList.length} staff).`;
+      document.getElementById('adminStatus').textContent = 'Roster absensi diperbarui dari Data Staff.';
+      refreshButton.disabled = false;
+    }
+
+    function exportCsv() {
+      const headers = ['Periode Minggu', 'Tanggal', 'Nama Staff', 'Jabatan', 'Riwayat Shift Harian', 'Total Harian', 'Total Mingguan'];
+      const csvCell = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
+      const weekLabel = `${weekDates[0]} - ${weekDates[6]}`;
+      const rows = staffList.flatMap(staff => weekDates.map(date => {
+        const record = weeklyRecords[date]?.[staff.id] || {};
+        const shifts = getShifts(record).map((shift, index) => `Shift ${index + 1}: ${formatClockTime(shift.checkIn)} - ${formatClockTime(shift.checkOut)}`).join(' | ');
+        const weeklyMinutes = weekDates.reduce((total, day) => total + attendanceMinutes(weeklyRecords[day]?.[staff.id] || {}), 0);
+        return [weekLabel, date, staff.name, staff.role, shifts, formatDuration(attendanceMinutes(record)), formatDuration(weeklyMinutes)].map(csvCell).join(',');
+      }));
+      const blob = new Blob(['\uFEFF', [headers.map(csvCell).join(','), ...rows].join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `absensi-mingguan-${weekDates[0]}-${weekDates[6]}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function saveWeeklyRecap() {
+      const recap = {
+        startDate: weekDates[0],
+        endDate: weekDates[6],
+        savedAt: new Date().toISOString(),
+        staff: staffList.map(staff => {
+          const days = weekDates.map(date => {
+            const record = weeklyRecords[date]?.[staff.id] || {};
+            return { date, shifts: getShifts(record) };
+          });
+          const totalMinutes = days.reduce((total, day) => total + attendanceMinutes({ shifts: day.shifts }), 0);
+          return { id: staff.id, name: staff.name, role: staff.role, days, totalMinutes };
+        })
+      };
+
+      try {
+        const { requestAttendanceGraphql } = await nhostModulePromise;
+        await requestAttendanceGraphql(`
+          mutation SaveWeeklyRecap($weekStart: date!, $recap: jsonb!) {
+            insert_attendance_weekly_recaps_one(
+              object: { week_start: $weekStart, recap: $recap }
+              on_conflict: { constraint: attendance_weekly_recaps_week_start_key, update_columns: [recap, saved_at] }
+            ) { week_start }
+          }
+        `, { weekStart: weekDates[0], recap }, 'attendance_admin');
+        document.getElementById('adminStatus').textContent = `Rekap ${weekDates[0]} - ${weekDates[6]} berhasil disimpan online di Nhost.`;
+      } catch (error) {
+        document.getElementById('adminStatus').textContent = `Rekap gagal disimpan: ${error.message}`;
+      }
+    }
+
+    function requestAdminAction(action) {
+      pendingAdminAction = action;
+      const isRefresh = action === 'refreshStaff';
+      const isLogout = action === 'logoutAdmin';
+      document.getElementById('adminActionMessage').textContent = isLogout
+        ? 'Keluar dari mode admin pada perangkat ini? Sesi admin di perangkat lain tetap aktif.'
+        : isRefresh
+          ? 'Roster absensi akan diganti dengan data staff terbaru. Catatan absensi yang sudah tersimpan tidak akan dihapus.'
+          : `Simpan rekap absensi untuk minggu ${weekDates[0]} - ${weekDates[6]}?`;
+      document.getElementById('confirmAdminAction').textContent = isLogout ? 'Keluar Admin' : isRefresh ? 'Perbarui Staff' : 'Simpan Rekap';
+      document.getElementById('adminActionDialog').showModal();
+      document.getElementById('cancelAdminAction').focus();
+    }
+
+    async function resetWeeklyAttendance() {
+      try {
+        const { requestAttendanceGraphql } = await nhostModulePromise;
+        const result = await requestAttendanceGraphql(`
+          mutation ResetAttendanceWeek($startDate: date!, $endDate: date!) {
+            delete_attendance_shifts(where: { duty_date: { _gte: $startDate, _lte: $endDate } }) {
+              affected_rows
+            }
+          }
+        `, { startDate: weekDates[0], endDate: weekDates[6] }, 'attendance_admin');
+        weekDates.forEach(date => localStorage.removeItem(draftStorageKey(date)));
+        weeklyRecords = Object.fromEntries(weekDates.map(date => [date, {}]));
+        attendanceRecords = {};
+        renderAttendance();
+        document.getElementById('saveNotice').textContent = 'Absensi minggu ini sudah direset';
+        document.getElementById('saveNotice').className = 'text-xs text-amber-200';
+        document.getElementById('adminStatus').textContent = `Absensi ${weekDates[0]} - ${weekDates[6]} berhasil direset online (${result.delete_attendance_shifts.affected_rows} shift).`;
+      } catch (error) {
+        document.getElementById('adminStatus').textContent = `Reset gagal: ${error.message}`;
+      }
+      document.getElementById('resetWeekConfirmation').classList.add('hidden');
+    }
+
+    const adminToolsDialog = document.getElementById('adminToolsDialog');
+    const adminLoginForm = document.getElementById('adminLoginForm');
+    const adminControls = document.getElementById('adminControls');
+    const adminEmail = document.getElementById('adminEmail');
+    const adminPassword = document.getElementById('adminPassword');
+
+    document.getElementById('btnAdminTools').addEventListener('click', () => {
+      document.getElementById('resetWeekConfirmation').classList.add('hidden');
+      adminLoginForm.classList.toggle('hidden', isAdminAuthenticated);
+      adminControls.classList.toggle('hidden', !isAdminAuthenticated);
+      adminToolsDialog.showModal();
+      if (!isAdminAuthenticated) adminEmail.focus();
+    });
+    document.getElementById('closeAdminTools').addEventListener('click', () => adminToolsDialog.close());
+    adminToolsDialog.addEventListener('click', event => {
+      if (event.target === adminToolsDialog) adminToolsDialog.close();
+    });
+    adminToolsDialog.addEventListener('close', () => {
+      adminLoginForm.classList.toggle('hidden', isAdminAuthenticated);
+      adminControls.classList.add('hidden');
+      adminPassword.value = '';
+    });
+    adminLoginForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      const status = document.getElementById('adminLoginStatus');
+      const submitButton = document.getElementById('adminLoginSubmit');
+      status.classList.add('hidden');
+      submitButton.disabled = true;
+      submitButton.textContent = 'Memverifikasi...';
+      try {
+        const { signInAttendanceAdmin, requestAttendanceGraphql } = await nhostModulePromise;
+        await signInAttendanceAdmin(adminEmail.value.trim(), adminPassword.value);
+        await requestAttendanceGraphql('query VerifyAttendanceAdmin { attendance_weekly_recaps(limit: 1) { week_start } }', {}, 'attendance_admin');
+        isAdminAuthenticated = true;
+        adminLoginForm.classList.add('hidden');
+        adminControls.classList.remove('hidden');
+        editingStaffIds.clear();
+        renderAttendance();
+        weekStart.value = weekDates[0];
+        document.getElementById('adminStatus').textContent = `Login admin berhasil. Periode aktif: ${weekDates[0]} - ${weekDates[6]}`;
+      } catch (error) {
+        status.textContent = error.message;
+        status.classList.remove('hidden');
+        adminPassword.value = '';
+        adminPassword.focus();
+      } finally {
+        submitButton.disabled = false;
+        submitButton.innerHTML = '<i class="fa-solid fa-right-to-bracket mr-1"></i>Masuk Admin';
+      }
+    });
+    document.getElementById('logoutAdmin').addEventListener('click', () => requestAdminAction('logoutAdmin'));
+    document.getElementById('applyWeek').addEventListener('click', () => {
+      if (!weekStart.value) return;
+      editingStaffIds.clear();
+      loadWeekDrafts(attendanceDate.value);
+      document.getElementById('adminStatus').textContent = `Periode aktif: ${weekDates[0]} - ${weekDates[6]}`;
+    });
+    const adminActionDialog = document.getElementById('adminActionDialog');
+    document.getElementById('saveWeeklyRecap').addEventListener('click', () => requestAdminAction('saveWeeklyRecap'));
+    document.getElementById('refreshStaff').addEventListener('click', () => requestAdminAction('refreshStaff'));
+    document.getElementById('cancelAdminAction').addEventListener('click', () => adminActionDialog.close());
+    document.getElementById('confirmAdminAction').addEventListener('click', async () => {
+      const action = pendingAdminAction;
+      adminActionDialog.close();
+      if (action === 'refreshStaff') loadStaff({ refresh: true });
+      if (action === 'saveWeeklyRecap') saveWeeklyRecap();
+      if (action === 'logoutAdmin') {
+        try {
+          const { signOutAttendanceAdmin } = await nhostModulePromise;
+          await signOutAttendanceAdmin();
+        } finally {
+          isAdminAuthenticated = false;
+          editingStaffIds.clear();
+          renderAttendance();
+          adminToolsDialog.close();
+        }
+      }
+    });
+    adminActionDialog.addEventListener('click', event => {
+      if (event.target === adminActionDialog) adminActionDialog.close();
+    });
+    adminActionDialog.addEventListener('close', () => {
+      pendingAdminAction = null;
+    });
+    document.getElementById('requestWeekReset').addEventListener('click', () => {
+      document.getElementById('resetWeekRange').textContent = `${weekDates[0]} - ${weekDates[6]}`;
+      document.getElementById('resetWeekConfirmation').classList.remove('hidden');
+    });
+    document.getElementById('cancelWeekReset').addEventListener('click', () => {
+      document.getElementById('resetWeekConfirmation').classList.add('hidden');
+    });
+    document.getElementById('confirmWeekReset').addEventListener('click', resetWeeklyAttendance);
+
+    attendanceDate.addEventListener('change', () => {
+      editingStaffIds.clear();
+      attendanceRecords = weeklyRecords[attendanceDate.value] || {};
+      renderAttendance();
+      const hasDraft = Object.keys(attendanceRecords).length > 0;
+      saveNotice.textContent = hasDraft ? 'Draf hari dimuat dari browser ini' : 'Belum ada draf untuk hari ini';
+      saveNotice.className = hasDraft ? 'text-xs text-emerald-300' : 'text-xs text-slate-400';
+    });
+    searchStaff.addEventListener('input', renderAttendance);
+    attendanceBody.addEventListener('click', event => {
+      const editButton = event.target.closest('[data-toggle-shift-edit]');
+      if (editButton) {
+        const staffId = editButton.dataset.staffId;
+        if (editingStaffIds.has(staffId)) editingStaffIds.delete(staffId);
+        else editingStaffIds.add(staffId);
+        renderAttendance();
+        return;
+      }
+      const deleteButton = event.target.closest('[data-delete-shift]');
+      if (deleteButton) {
+        requestDeleteShift(deleteButton.dataset.staffId, Number(deleteButton.dataset.shiftIndex));
+        return;
+      }
+      const button = event.target.closest('[data-attendance-action]');
+      if (button) recordAttendance(button.dataset.staffId);
+    });
+    function updateDraftField(event) {
+      const { staffId, field } = event.target.dataset;
+      if (!staffId || !field) return;
+      const record = attendanceRecords[staffId] || { shifts: [], pending: {} };
+      record.pending = { ...(record.pending || {}), [field]: event.target.value };
+      attendanceRecords[staffId] = record;
+      saveDraft();
+    }
+    attendanceBody.addEventListener('input', updateDraftField);
+    attendanceBody.addEventListener('change', updateDraftField);
+    document.getElementById('cancelDeleteShift').addEventListener('click', () => {
+      pendingShiftDeletion = null;
+      document.getElementById('deleteShiftDialog').close();
+    });
+    document.getElementById('confirmDeleteShift').addEventListener('click', () => {
+      if (pendingShiftDeletion) deleteShift(pendingShiftDeletion.staffId, pendingShiftDeletion.shiftIndex);
+      pendingShiftDeletion = null;
+      document.getElementById('deleteShiftDialog').close();
+    });
+    document.getElementById('deleteShiftDialog').addEventListener('click', event => {
+      if (event.target.id === 'deleteShiftDialog') {
+        pendingShiftDeletion = null;
+        event.currentTarget.close();
+      }
+    });
+    document.getElementById('btnExport').addEventListener('click', exportCsv);
+    loadStaff();
+    (async () => {
+      const { restoreAttendanceAdmin } = await nhostModulePromise;
+      if (await restoreAttendanceAdmin()) {
+        isAdminAuthenticated = true;
+        renderAttendance();
+        document.getElementById('adminStatus').textContent = 'Sesi admin dipulihkan di perangkat ini.';
+      }
+    })();
+  </script>
+</body>
+</html>

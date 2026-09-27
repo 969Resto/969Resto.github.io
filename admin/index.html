@@ -67,24 +67,17 @@
       </div>
       <h3 class="text-xl font-bold text-slate-100 font-luxury mb-1">Akses Terproteksi</h3>
       <p class="text-xs text-slate-400 mb-5 leading-relaxed">
-        Halaman ini khusus untuk manajemen 969 Resto. Masukkan PIN keamanan untuk membuka data internal.
+        Masuk dengan akun admin Nhost untuk membuka seluruh panel manajemen.
       </p>
 
-
-      <form onsubmit="handleUnlock(event)" class="space-y-3">
-        <input 
-          type="password" 
-          id="gate-pin-input" 
-          placeholder="Masukkan PIN Rahasia..." 
-          autocomplete="off"
-          autofocus
-          class="w-full text-center tracking-widest text-lg font-mono font-bold bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-4 py-3 text-amber-300 focus:outline-none transition"
-        />
-        <p id="gate-error" class="text-rose-400 text-xs font-semibold hidden">PIN salah! Akses ditolak.</p>
-
-
-        <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-amber-500/20 active:scale-95">
-          Buka Panel Manajemen
+      <form id="adminLoginForm" class="space-y-3 text-left">
+        <label for="adminEmail" class="block text-xs font-semibold text-slate-300">Email Admin</label>
+        <input id="adminEmail" type="email" autocomplete="username" autofocus required class="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition" />
+        <label for="adminPassword" class="block text-xs font-semibold text-slate-300">Password</label>
+        <input id="adminPassword" type="password" autocomplete="current-password" required class="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition" />
+        <p id="adminLoginError" class="hidden text-rose-400 text-xs font-semibold" role="alert"></p>
+        <button id="btnAdminLogin" type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-amber-500/20 active:scale-95">
+          <i class="fa-solid fa-right-to-bracket mr-1"></i> Masuk ke Panel Manajemen
         </button>
       </form>
 
@@ -102,7 +95,7 @@
   <div id="protected-content" style="display: none;" class="flex flex-col min-h-screen justify-between">
     
     <!-- TOP HEADER -->
-    <header class="max-w-6xl mx-auto w-full flex items-center justify-between py-4 border-b border-amber-900/40">
+    <header class="max-w-6xl mx-auto w-full flex flex-wrap items-center justify-between gap-3 py-4 border-b border-amber-900/40">
       <div class="flex items-center gap-3">
         <img src="../Invoice/logo.png" alt="969 Resto" class="w-11 h-11 rounded-full border border-amber-500/40 shadow-lg object-cover" onerror="this.src='https://ui-avatars.com/api/?name=969+Resto&background=881313&color=fff';" />
         <div>
@@ -113,7 +106,10 @@
         </div>
       </div>
       
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center justify-end gap-2">
+        <a href="../index.html" class="px-3 py-1.5 rounded-xl bg-slate-900/80 border border-amber-500/30 hover:border-amber-400 text-amber-200 text-xs font-bold transition">
+          <i class="fa-solid fa-house mr-1"></i> Dashboard Utama
+        </a>
         <button onclick="handleLogout()" class="px-3 py-1.5 rounded-xl bg-rose-950/40 border border-rose-500/40 hover:bg-rose-900/40 text-rose-300 text-xs font-bold transition">
           <i class="fa-solid fa-right-from-bracket mr-1"></i> Kunci Sesi
         </button>
@@ -164,7 +160,7 @@
 
 
         <!-- 2. ABSENSI -->
-        <a href="https://docs.google.com/spreadsheets/d/1fzQlao9p8FT--l10U_ZsXefmKr81xD9_1IORvmd_OYc/edit?pli=1&gid=94247801#gid=94247801" target="_blank" rel="noopener noreferrer" class="portal-card rounded-2xl p-6 sm:p-7 flex flex-col justify-between group relative overflow-hidden">
+        <a href="../absensi.html" class="portal-card rounded-2xl p-6 sm:p-7 flex flex-col justify-between group relative overflow-hidden">
           <div class="absolute -right-8 -top-8 w-28 h-28 bg-indigo-600/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all"></div>
           <div>
             <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-700 flex items-center justify-center text-white text-xl font-bold mb-5 shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
@@ -179,11 +175,28 @@
             </p>
           </div>
           <div class="pt-4 border-t border-amber-900/30 flex items-center justify-between text-xs font-bold text-indigo-400 group-hover:translate-x-1 transition-transform">
-            <span>Akses Absensi Karyawan</span>
-            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            <span>Buka Absensi Karyawan</span>
+            <i class="fa-solid fa-arrow-right"></i>
           </div>
         </a>
 
+
+        <!-- 3. RIWAYAT ABSENSI -->
+        <a href="absensi-history.html" class="portal-card rounded-2xl p-6 sm:p-7 flex flex-col justify-between group relative overflow-hidden">
+          <div class="absolute -right-8 -top-8 w-28 h-28 bg-sky-600/10 rounded-full blur-2xl group-hover:bg-sky-500/20 transition-all"></div>
+          <div>
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-700 flex items-center justify-center text-white text-xl font-bold mb-5 shadow-lg shadow-sky-500/20 group-hover:scale-105 transition-transform">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <span class="text-[10.5px] font-bold tracking-widest text-sky-300 uppercase font-luxury">Arsip Kepegawaian</span>
+            <h3 class="text-xl font-bold text-slate-100 group-hover:text-sky-300 transition-colors mt-1 mb-2 font-luxury">Riwayat Absensi</h3>
+            <p class="text-xs text-slate-400 leading-relaxed mb-6">Lihat rekap mingguan yang telah disimpan, termasuk rincian shift dan total jam staff.</p>
+          </div>
+          <div class="pt-4 border-t border-amber-900/30 flex items-center justify-between text-xs font-bold text-sky-300 group-hover:translate-x-1 transition-transform">
+            <span>Buka Riwayat Absensi</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </div>
+        </a>
 
         <!-- 3. DATA KARYAWAN -->
         <a href="staff.html" class="portal-card rounded-2xl p-6 sm:p-7 flex flex-col justify-between group relative overflow-hidden">
@@ -259,37 +272,55 @@
 
 
   <script>
-    // PIN RAHASIA: 9690
-    const PIN_RAHASIA = "9690";
+    const nhostModulePromise = import('../nhost/client.js');
+    const allowedAdminPages = new Set(['absensi-history.html', 'keuangan.html', 'pembagian-gaji.html', 'staff.html']);
 
-
-    function checkAuth() {
-      document.getElementById("lockscreen").style.display = "flex";
-      document.getElementById("protected-content").style.display = "none";
+    function showAdminLoginError(message) {
+      const errorElement = document.getElementById('adminLoginError');
+      errorElement.textContent = message;
+      errorElement.classList.toggle('hidden', !message);
     }
 
+    function openAdminPageAfterLogin() {
+      const nextPage = new URLSearchParams(window.location.search).get('next');
+      if (allowedAdminPages.has(nextPage)) window.location.replace(nextPage);
+    }
 
-    function handleUnlock(e) {
-      e.preventDefault();
-      const inputPin = document.getElementById("gate-pin-input").value.trim();
+    function activateAdminDashboard() {
+      document.getElementById('lockscreen').classList.add('hidden');
+      document.getElementById('protected-content').style.display = 'flex';
+    }
 
-
-      if (inputPin === PIN_RAHASIA) {
-        document.getElementById("lockscreen").style.display = "none";
-        document.getElementById("protected-content").style.display = "flex";
-      } else {
-        document.getElementById("gate-error").classList.remove("hidden");
-        document.getElementById("gate-pin-input").value = "";
+    document.getElementById('adminLoginForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      const button = document.getElementById('btnAdminLogin');
+      button.disabled = true;
+      showAdminLoginError('');
+      try {
+        const { signInAttendanceAdmin } = await nhostModulePromise;
+        await signInAttendanceAdmin(
+          document.getElementById('adminEmail').value.trim(),
+          document.getElementById('adminPassword').value
+        );
+        openAdminPageAfterLogin();
+        activateAdminDashboard();
+      } catch (error) {
+        showAdminLoginError(error.message || 'Login admin gagal.');
+      } finally {
+        button.disabled = false;
       }
-    }
+    });
 
-
-    function handleLogout() {
+    async function handleLogout() {
+      const { signOutAttendanceAdmin } = await nhostModulePromise;
+      await signOutAttendanceAdmin();
       window.location.reload();
     }
 
-
-    window.addEventListener("DOMContentLoaded", checkAuth);
+    (async () => {
+      const { restoreAttendanceAdmin } = await nhostModulePromise;
+      if (await restoreAttendanceAdmin()) activateAdminDashboard();
+    })();
   </script>
 </body>
 </html>

@@ -7,19 +7,44 @@ const allowedOrigins = new Set(
     .filter(Boolean)
 );
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "https://rdnhbqufxidbdwmxxabf.supabase.co";
+const nhostGraphqlUrl = Deno.env.get("NHOST_GRAPHQL_URL") || "https://xqjnbwhipztjcbcnmzam.graphql.ap-southeast-1.nhost.run/v1";
+
+async function isNhostAttendanceAdmin(authorization: string) {
+  const response = await fetch(nhostGraphqlUrl, {
+    method: "POST",
+    headers: {
+      Authorization: authorization,
+      "Content-Type": "application/json",
+      "x-hasura-role": "attendance_admin"
+    },
+    body: JSON.stringify({
+      query: "query VerifyAttendanceAdmin { attendance_weekly_recaps(limit: 1) { week_start } }"
+    })
+  });
+  if (!response.ok) return false;
+  const result = await response.json();
+  return !result.errors?.length && Array.isArray(result.data?.attendance_weekly_recaps);
+}
 
 async function isAllowedAdmin(request: Request) {
+  const authorization = request.headers.get("Authorization");
+  if (!authorization?.startsWith("Bearer ")) return false;
+
+  try {
+    if (await isNhostAttendanceAdmin(authorization)) return true;
+  } catch {
+    // A Nhost verification failure may still be a valid legacy Supabase session.
+  }
+
   const allowedEmails = new Set(
     (Deno.env.get("DISCORD_ADMIN_EMAILS") || "")
       .split(",")
       .map((email) => email.trim().toLowerCase())
       .filter(Boolean)
   );
-  if (!allowedEmails.size) throw new Error("DISCORD_ADMIN_EMAILS belum dikonfigurasi.");
-
-  const authorization = request.headers.get("Authorization");
+  if (!allowedEmails.size) return false;
   const apiKey = Deno.env.get("SUPABASE_ANON_KEY") || request.headers.get("apikey");
-  if (!authorization?.startsWith("Bearer ") || !apiKey) return false;
+  if (!apiKey) return false;
 
   const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
     headers: { apikey: apiKey, Authorization: authorization }
