@@ -19,6 +19,7 @@
       min-height: 100vh;
       background-image: radial-gradient(circle at 50% 0%, rgba(136, 19, 19, 0.45) 0%, transparent 60%), radial-gradient(circle at 90% 90%, rgba(217, 119, 6, 0.15) 0%, transparent 50%);
     }
+    html:not(.admin-authenticated) body { visibility: hidden; }
     .font-luxury { font-family: 'Cinzel', Georgia, serif; }
     .portal-card { background: linear-gradient(145deg, rgba(28, 12, 12, 0.86), rgba(18, 6, 6, 0.94)); border: 1px solid rgba(212, 175, 55, 0.25); backdrop-filter: blur(16px); }
     .gold-gradient-text { background: linear-gradient(135deg, #fff0b3, #d4af37 50%, #aa8010); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -36,7 +37,7 @@
         <p class="mt-1 text-xs uppercase tracking-widest text-amber-200/60">Database Staff & Struktur Tim</p>
       </div>
     </div>
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center justify-center gap-2">
       <button id="btnExport" type="button" class="rounded-xl border border-emerald-500/40 bg-emerald-950/40 px-4 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-900/50">
         <i class="fa-solid fa-file-export mr-1"></i> Ekspor CSV
       </button>
@@ -45,6 +46,9 @@
       </button>
       <a href="index.html" class="rounded-xl border border-amber-500/30 bg-slate-900/80 px-4 py-2 text-xs font-semibold text-amber-200 transition hover:border-amber-400 hover:bg-slate-800">
         <i class="fa-solid fa-arrow-left mr-1"></i> Dashboard
+      </a>
+      <a href="../index.html" class="rounded-xl border border-slate-600 bg-slate-900/80 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-400 hover:bg-slate-800">
+        <i class="fa-solid fa-house mr-1"></i> Dashboard Utama
       </a>
     </div>
   </header>
@@ -395,6 +399,10 @@
 
     [searchStaff, statusFilter, roleFilter].forEach(input => input.addEventListener('input', renderStaff));
     loadStaff();
+  </script>
+  <script type="module">
+    import { ensureAttendanceAdmin } from '../nhost/client.js';
+    await ensureAttendanceAdmin();
   </script>
 </body>
 </html>

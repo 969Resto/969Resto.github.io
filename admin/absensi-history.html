@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>969 Resto - Riwayat Absensi</title>
+  <link rel="icon" type="image/png" href="../Invoice/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #080303; color: #fdfbf7; min-height: 100vh; background-image: radial-gradient(circle at 50% 0%, rgba(136, 19, 19, 0.4) 0%, transparent 60%), radial-gradient(circle at 90% 90%, rgba(16, 120, 90, 0.12) 0%, transparent 48%); }
+    .font-luxury { font-family: 'Cinzel', Georgia, serif; }
+    .portal-card { background: linear-gradient(145deg, rgba(28, 12, 12, 0.86), rgba(18, 6, 6, 0.94)); border: 1px solid rgba(212, 175, 55, 0.25); backdrop-filter: blur(16px); }
+    .field-dark { background: rgba(2, 6, 23, 0.8); border: 1px solid rgba(120, 53, 15, 0.5); color: #f1f5f9; }
+    .field-dark:focus { border-color: #d4af37; outline: none; }
+    .history-table th { white-space: nowrap; }
+    .history-table tbody tr { transition: background-color 0.2s ease; }
+    .history-table tbody tr:hover { background-color: rgba(120, 53, 15, 0.18); }
+  </style>
+</head>
+<body class="min-h-screen p-4 sm:p-6 md:p-8">
+  <div id="adminGate" class="fixed inset-0 z-50 flex items-center justify-center bg-[#080303] p-4">
+    <form id="adminGateForm" class="portal-card w-full max-w-sm rounded-xl p-6 text-center shadow-2xl sm:p-8">
+      <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-xl text-amber-300"><i class="fa-solid fa-shield-halved"></i></div>
+      <h1 class="font-luxury text-xl font-bold text-amber-100">Akses Admin</h1>
+      <p class="mt-2 text-xs leading-relaxed text-slate-400">Masuk dengan akun admin Nhost untuk melihat arsip.</p>
+      <label for="adminEmail" class="sr-only">Email Admin</label>
+      <input id="adminEmail" type="email" autocomplete="username" required class="field-dark mt-5 w-full rounded-lg px-3 py-3 text-sm">
+      <label for="adminPassword" class="sr-only">Password Admin</label>
+      <input id="adminPassword" type="password" autocomplete="current-password" required class="field-dark mt-3 w-full rounded-lg px-3 py-3 text-sm">
+      <p id="gateError" class="mt-2 hidden text-xs text-rose-300" role="alert"></p>
+      <button id="adminLoginButton" type="submit" class="mt-4 w-full rounded-lg bg-amber-500 px-4 py-3 text-xs font-bold text-slate-950 transition hover:bg-amber-400"><i class="fa-solid fa-right-to-bracket mr-1"></i>Masuk Admin</button>
+      <a href="../absensi.html" class="mt-4 inline-block text-xs text-slate-400 transition hover:text-slate-200">Kembali ke Absensi</a>
+    </form>
+  </div>
+
+  <div id="historyPage" class="hidden">
+    <header class="mx-auto flex w-full max-w-7xl flex-col gap-4 border-b border-amber-900/30 pb-6 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-center gap-4">
+        <img src="../Invoice/logo.png" alt="969 Resto" class="h-12 w-12 rounded-xl border border-amber-500/30 bg-black/40 object-contain p-1 shadow-lg">
+        <div>
+          <h1 class="font-luxury text-xl font-bold tracking-wider text-amber-100 sm:text-2xl">969 RESTO</h1>
+          <p class="mt-1 text-xs uppercase tracking-widest text-amber-200/60">Arsip Absensi</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <a href="../absensi.html" class="rounded-lg border border-emerald-500/40 bg-emerald-950/40 px-4 py-2 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-900/50"><i class="fa-solid fa-clipboard-user mr-1"></i>Absensi</a>
+        <button id="logoutHistory" type="button" class="rounded-lg border border-rose-500/40 bg-rose-950/30 px-4 py-2 text-xs font-semibold text-rose-200 transition hover:bg-rose-900/40"><i class="fa-solid fa-right-from-bracket mr-1"></i>Keluar Admin</button>
+        <a href="./" class="rounded-lg border border-amber-500/30 bg-slate-900/80 px-4 py-2 text-xs font-semibold text-amber-200 transition hover:border-amber-400 hover:bg-slate-800"><i class="fa-solid fa-arrow-left mr-1"></i>Dashboard Admin</a>
+        <a href="../index.html" class="rounded-lg border border-slate-600 bg-slate-900/80 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-400 hover:bg-slate-800"><i class="fa-solid fa-house mr-1"></i>Dashboard Utama</a>
+      </div>
+    </header>
+
+    <main class="mx-auto w-full max-w-7xl space-y-6 py-8">
+      <section class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-sky-300">Arsip Kepegawaian</p>
+          <h2 class="font-luxury text-2xl font-bold text-slate-100 sm:text-3xl">Riwayat Absensi Mingguan</h2>
+          <p class="mt-2 text-sm text-slate-400">Pilih salah satu rekap mingguan yang telah disimpan.</p>
+        </div>
+        <div class="flex flex-wrap items-end gap-2">
+          <label class="text-xs font-semibold text-amber-300">Periode tersimpan
+            <select id="archiveSelect" class="field-dark mt-1 block min-w-56 rounded-lg px-3 py-2.5 text-sm"></select>
+          </label>
+          <button id="deleteArchiveButton" type="button" disabled class="rounded-lg border border-rose-500/40 bg-rose-950/30 px-4 py-2.5 text-xs font-semibold text-rose-200 transition hover:bg-rose-900/40 disabled:cursor-not-allowed disabled:opacity-40"><i class="fa-solid fa-trash-can mr-1"></i>Hapus Periode</button>
+        </div>
+      </section>
+
+      <section id="archiveSummary" class="hidden grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Ringkasan arsip">
+        <div class="portal-card rounded-lg p-4"><p class="text-[10px] uppercase tracking-wider text-amber-300">Periode</p><strong id="archivePeriod" class="mt-1 block text-sm text-white">-</strong></div>
+        <div class="portal-card rounded-lg p-4"><p class="text-[10px] uppercase tracking-wider text-emerald-300">Total Jam</p><strong id="archiveHours" class="mt-1 block text-xl text-emerald-300">0:00</strong></div>
+        <div class="portal-card rounded-lg p-4"><p class="text-[10px] uppercase tracking-wider text-sky-300">Total Shift</p><strong id="archiveShifts" class="mt-1 block text-xl text-sky-300">0</strong></div>
+        <div class="portal-card rounded-lg p-4"><p class="text-[10px] uppercase tracking-wider text-amber-300">Staff</p><strong id="archiveStaff" class="mt-1 block text-xl text-white">0</strong></div>
+      </section>
+      <p id="savedAt" class="text-xs text-slate-500"></p>
+
+      <section class="portal-card overflow-hidden rounded-xl">
+        <div class="overflow-x-auto">
+          <table class="history-table w-full min-w-[850px] border-collapse text-left text-xs text-slate-300">
+            <thead class="bg-amber-950/30 text-[10px] uppercase tracking-wider text-amber-300">
+              <tr class="border-b border-amber-900/40">
+                <th class="px-5 py-4">No</th>
+                <th class="px-5 py-4">Nama Staff</th>
+                <th class="px-5 py-4">Jabatan</th>
+                <th class="px-5 py-4">Rincian Harian</th>
+                <th class="whitespace-nowrap px-4 py-4 text-center">Total Mingguan</th>
+              </tr>
+            </thead>
+            <tbody id="archiveBody" class="divide-y divide-amber-900/20">
+              <tr><td colspan="5" class="px-5 py-12 text-center text-slate-400">Memuat arsip...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="mx-auto w-full max-w-7xl border-t border-amber-900/30 py-6 text-center text-xs text-slate-500"><p>&copy; 2026 <strong>969 Resto</strong> &bull; Internal Management System</p></footer>
+  </div>
+
+  <dialog id="logoutHistoryDialog" class="w-full max-w-md rounded-xl border border-amber-500/30 bg-slate-950 p-0 text-slate-100 shadow-2xl backdrop:bg-black/75 backdrop:backdrop-blur-sm" aria-labelledby="logoutHistoryTitle" aria-describedby="logoutHistoryMessage">
+    <div class="p-5 sm:p-6">
+      <div class="flex items-start gap-3">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300"><i class="fa-solid fa-right-from-bracket"></i></span>
+        <div>
+          <h3 id="logoutHistoryTitle" class="font-luxury text-lg font-bold text-amber-100">Keluar dari Mode Admin?</h3>
+          <p id="logoutHistoryMessage" class="mt-2 text-sm leading-relaxed text-slate-300">Sesi pada perangkat ini akan diakhiri. Perangkat lain tetap masuk.</p>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end gap-2">
+        <button id="cancelLogoutHistory" type="button" class="rounded-lg border border-slate-600 px-4 py-2.5 text-xs font-semibold text-slate-300 transition hover:bg-white/10">Batal</button>
+        <button id="confirmLogoutHistory" type="button" class="rounded-lg bg-rose-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-rose-500">Keluar Admin</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="deleteArchiveDialog" class="w-full max-w-md rounded-xl border border-rose-500/30 bg-slate-950 p-0 text-slate-100 shadow-2xl backdrop:bg-black/75 backdrop:backdrop-blur-sm" aria-labelledby="deleteArchiveTitle" aria-describedby="deleteArchiveMessage">
+    <div class="p-5 sm:p-6">
+      <div class="flex items-start gap-3">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300"><i class="fa-solid fa-trash-can"></i></span>
+        <div>
+          <h3 id="deleteArchiveTitle" class="font-luxury text-lg font-bold text-rose-100">Hapus Rekap Periode?</h3>
+          <p id="deleteArchiveMessage" class="mt-2 text-sm leading-relaxed text-slate-300"></p>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end gap-2">
+        <button id="cancelDeleteArchive" type="button" class="rounded-lg border border-slate-600 px-4 py-2.5 text-xs font-semibold text-slate-300 transition hover:bg-white/10">Batal</button>
+        <button id="confirmDeleteArchive" type="button" class="rounded-lg bg-rose-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-rose-500">Hapus Periode</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    const nhostModulePromise = import('../nhost/client.js');
+    const archiveBody = document.getElementById('archiveBody');
+    const archiveSelect = document.getElementById('archiveSelect');
+    const deleteArchiveDialog = document.getElementById('deleteArchiveDialog');
+    let archives = [];
+    let pendingArchiveWeek = null;
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
+    }
+
+    function formatDuration(minutes) {
+      const total = Number(minutes) || 0;
+      return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+    }
+
+    function durationOf(shifts) {
+      return (shifts || []).reduce((total, shift) => {
+        const start = new Date(shift.checkIn).getTime();
+        const end = new Date(shift.checkOut).getTime();
+        return Number.isFinite(start) && Number.isFinite(end) && end >= start ? total + Math.floor((end - start) / 60000) : total;
+      }, 0);
+    }
+
+    function formatDate(date) {
+      return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(`${date}T00:00:00`));
+    }
+
+    function formatTime(timestamp) {
+      return new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(timestamp));
+    }
+
+    async function loadArchives() {
+      archiveBody.innerHTML = '<tr><td colspan="5" class="px-5 py-12 text-center text-slate-400">Memuat arsip dari Nhost...</td></tr>';
+      try {
+        const { requestAttendanceGraphql } = await nhostModulePromise;
+        const data = await requestAttendanceGraphql(`
+          query GetWeeklyRecaps {
+            attendance_weekly_recaps(order_by: { week_start: desc }) {
+              week_start recap saved_at
+            }
+          }
+        `, {}, 'attendance_admin');
+        archives = (data.attendance_weekly_recaps || []).map(row => ({
+          ...row.recap,
+          startDate: row.week_start,
+          endDate: row.recap.endDate,
+          savedAt: row.saved_at
+        }));
+      } catch (error) {
+        document.getElementById('archiveSummary').classList.add('hidden');
+        document.getElementById('savedAt').textContent = '';
+        archiveBody.innerHTML = `<tr><td colspan="5" class="px-5 py-12 text-center text-rose-300">Gagal memuat arsip Nhost: ${escapeHtml(error.message)}</td></tr>`;
+        document.getElementById('deleteArchiveButton').disabled = true;
+        return;
+      }
+
+      archiveSelect.innerHTML = archives.map((archive, index) => `<option value="${index}">${formatDate(archive.startDate)} - ${formatDate(archive.endDate)}</option>`).join('');
+      document.getElementById('deleteArchiveButton').disabled = archives.length === 0;
+      if (archives.length) {
+        archiveSelect.value = '0';
+        renderArchive(archives[0]);
+      } else {
+        document.getElementById('archiveSummary').classList.add('hidden');
+        document.getElementById('savedAt').textContent = '';
+        archiveBody.innerHTML = '<tr><td colspan="5" class="px-5 py-12 text-center text-slate-400">Belum ada rekap tersimpan di Nhost. Simpan rekap mingguan dari halaman Absensi.</td></tr>';
+        archiveSelect.innerHTML = '<option value="">Belum ada arsip</option>';
+      }
+    }
+
+    function renderArchive(archive) {
+      const totalMinutes = archive.staff.reduce((total, staff) => total + (Number(staff.totalMinutes) || 0), 0);
+      const totalShifts = archive.staff.reduce((total, staff) => total + (staff.days || []).reduce((dayTotal, day) => dayTotal + (day.shifts || []).length, 0), 0);
+      document.getElementById('archiveSummary').classList.remove('hidden');
+      document.getElementById('archivePeriod').textContent = `${formatDate(archive.startDate)} - ${formatDate(archive.endDate)}`;
+      document.getElementById('archiveHours').textContent = formatDuration(totalMinutes);
+      document.getElementById('archiveShifts').textContent = totalShifts;
+      document.getElementById('archiveStaff').textContent = archive.staff.length;
+      document.getElementById('savedAt').textContent = archive.savedAt ? `Disimpan ${new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(archive.savedAt))}` : '';
+      const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      archiveBody.innerHTML = archive.staff.length ? archive.staff.map((staff, index) => {
+        const dailyDetails = (staff.days || []).map(day => {
+          const shifts = day.shifts || [];
+          const dayName = dayNames[new Date(`${day.date}T00:00:00`).getDay()];
+          const detail = shifts.length
+            ? shifts.map((shift, shiftIndex) => `Shift ${shiftIndex + 1}: ${formatTime(shift.checkIn)} - ${formatTime(shift.checkOut)}`).join('<br>')
+            : 'Tidak ada shift';
+          return `<div class="border-b border-slate-800 py-2 last:border-0"><div class="flex flex-wrap items-center justify-between gap-2"><strong class="text-amber-200">${dayName}, ${formatDate(day.date)}</strong><span class="text-emerald-300">${formatDuration(durationOf(shifts))}</span></div><p class="mt-1 leading-relaxed text-slate-400">${detail}</p></div>`;
+        }).join('');
+        return `<tr><td class="px-5 py-4 text-slate-500">${index + 1}</td><td class="px-5 py-4 font-semibold text-slate-100">${escapeHtml(staff.name)}</td><td class="px-5 py-4">${escapeHtml(staff.role)}</td><td class="px-5 py-3"><details class="max-w-xl"><summary class="cursor-pointer text-sky-300 hover:text-sky-200">Lihat rincian 7 hari</summary><div class="mt-2 min-w-64">${dailyDetails}</div></details></td><td class="whitespace-nowrap px-4 py-4 text-center text-sm font-bold text-emerald-300">${formatDuration(staff.totalMinutes)}</td></tr>`;
+      }).join('') : '<tr><td colspan="5" class="px-5 py-12 text-center text-slate-400">Rekap ini belum memiliki data staff.</td></tr>';
+    }
+
+    document.getElementById('adminGateForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      const emailInput = document.getElementById('adminEmail');
+      const passwordInput = document.getElementById('adminPassword');
+      const errorMessage = document.getElementById('gateError');
+      const loginButton = document.getElementById('adminLoginButton');
+      errorMessage.classList.add('hidden');
+      loginButton.disabled = true;
+      loginButton.textContent = 'Memverifikasi...';
+      try {
+        const { signInAttendanceAdmin, requestAttendanceGraphql } = await nhostModulePromise;
+        await signInAttendanceAdmin(emailInput.value.trim(), passwordInput.value);
+        await requestAttendanceGraphql('query VerifyAttendanceAdmin { attendance_weekly_recaps(limit: 1) { week_start } }', {}, 'attendance_admin');
+        document.getElementById('adminGate').classList.add('hidden');
+        document.getElementById('historyPage').classList.remove('hidden');
+        await loadArchives();
+      } catch (error) {
+        errorMessage.textContent = error.message;
+        errorMessage.classList.remove('hidden');
+        passwordInput.value = '';
+        passwordInput.focus();
+      } finally {
+        loginButton.disabled = false;
+        loginButton.innerHTML = '<i class="fa-solid fa-right-to-bracket mr-1"></i>Masuk Admin';
+      }
+    });
+
+    archiveSelect.addEventListener('change', () => {
+      const archive = archives[Number(archiveSelect.value)];
+      if (archive) renderArchive(archive);
+    });
+
+    document.getElementById('deleteArchiveButton').addEventListener('click', () => {
+      const archive = archives[Number(archiveSelect.value)];
+      if (!archive) return;
+      pendingArchiveWeek = archive.startDate;
+      document.getElementById('deleteArchiveMessage').textContent = `Hapus rekap ${formatDate(archive.startDate)} - ${formatDate(archive.endDate)}? Absensi harian dan rekap periode lain tidak akan dihapus.`;
+      deleteArchiveDialog.showModal();
+      document.getElementById('cancelDeleteArchive').focus();
+    });
+    document.getElementById('cancelDeleteArchive').addEventListener('click', () => deleteArchiveDialog.close());
+    document.getElementById('confirmDeleteArchive').addEventListener('click', async () => {
+      if (!pendingArchiveWeek) return;
+      const weekStart = pendingArchiveWeek;
+      const confirmButton = document.getElementById('confirmDeleteArchive');
+      confirmButton.disabled = true;
+      try {
+        const { requestAttendanceGraphql } = await nhostModulePromise;
+        await requestAttendanceGraphql(`
+          mutation DeleteWeeklyRecap($weekStart: date!) {
+            delete_attendance_weekly_recaps(where: { week_start: { _eq: $weekStart } }) {
+              affected_rows
+            }
+          }
+        `, { weekStart }, 'attendance_admin');
+        deleteArchiveDialog.close();
+        await loadArchives();
+      } catch (error) {
+        document.getElementById('deleteArchiveMessage').textContent = `Rekap gagal dihapus: ${error.message}`;
+      } finally {
+        confirmButton.disabled = false;
+      }
+    });
+    deleteArchiveDialog.addEventListener('click', event => {
+      if (event.target === deleteArchiveDialog) deleteArchiveDialog.close();
+    });
+    deleteArchiveDialog.addEventListener('close', () => {
+      pendingArchiveWeek = null;
+    });
+    const logoutHistoryDialog = document.getElementById('logoutHistoryDialog');
+    document.getElementById('logoutHistory').addEventListener('click', () => {
+      logoutHistoryDialog.showModal();
+      document.getElementById('cancelLogoutHistory').focus();
+    });
+    document.getElementById('cancelLogoutHistory').addEventListener('click', () => logoutHistoryDialog.close());
+    document.getElementById('confirmLogoutHistory').addEventListener('click', async () => {
+      logoutHistoryDialog.close();
+      const { signOutAttendanceAdmin } = await nhostModulePromise;
+      await signOutAttendanceAdmin();
+      window.location.reload();
+    });
+    (async () => {
+      const { restoreAttendanceAdmin } = await nhostModulePromise;
+      if (!await restoreAttendanceAdmin()) return;
+      document.getElementById('adminGate').classList.add('hidden');
+      document.getElementById('historyPage').classList.remove('hidden');
+      await loadArchives();
+    })();
+  </script>
+</body>
+</html>
