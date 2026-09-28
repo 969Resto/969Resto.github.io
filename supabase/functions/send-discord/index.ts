@@ -203,6 +203,60 @@ serve(async (request) => {
   }
 
   try {
+    const contentType = request.headers.get("Content-Type") || "";
+    if (contentType.toLowerCase().startsWith("multipart/form-data")) {
+      const contentLength = Number(request.headers.get("Content-Length") || 0);
+      if (contentLength > 9 * 1024 * 1024) {
+        return jsonResponse({ error: "Ukuran foto maksimal 8 MB." }, 413, origin);
+      }
+
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (!serviceRoleKey) {
+        return jsonResponse({ error: "Konfigurasi penyimpanan foto belum lengkap." }, 500, origin);
+      }
+
+      const formData = await request.formData();
+      const photo = formData.get("photo");
+      if (!(photo instanceof File) || !photo.type.startsWith("image/") || photo.size === 0 || photo.size > 8 * 1024 * 1024) {
+        return jsonResponse({ error: "Foto tidak valid atau ukurannya melebihi 8 MB." }, 400, origin);
+      }
+
+      const extensions: Record<string, string> = {
+        "image/jpeg": "jpg",
+        "image/png": "png",
+        "image/gif": "gif",
+        "image/webp": "webp",
+        "image/avif": "avif"
+      };
+      const extension = extensions[photo.type];
+      if (!extension) {
+        return jsonResponse({ error: "Format foto tidak didukung." }, 400, origin);
+      }
+
+      const filePath = `${crypto.randomUUID()}.${extension}`;
+      const storageResponse = await fetch(
+        `${supabaseUrl}/storage/v1/object/dokumen-keuangan/${filePath}`,
+        {
+          method: "POST",
+          headers: {
+            apikey: serviceRoleKey,
+            Authorization: `Bearer ${serviceRoleKey}`,
+            "Content-Type": photo.type,
+            "x-upsert": "false"
+          },
+          body: photo,
+          redirect: "error"
+        }
+      );
+      if (!storageResponse.ok) {
+        console.error("Photo upload failed:", await storageResponse.text());
+        return jsonResponse({ error: "Penyimpanan foto ditolak oleh server." }, 502, origin);
+      }
+
+      const publicUrl = `${supabaseUrl}/storage/v1/object/public/dokumen-keuangan/${filePath}`;
+      return jsonResponse({ success: true, url: publicUrl, path: filePath }, 201, origin);
+    }
+
     const contentLength = Number(request.headers.get("Content-Length") || 0);
     if (contentLength > 64 * 1024) {
       return jsonResponse({ error: "Payload laporan terlalu besar." }, 413, origin);
