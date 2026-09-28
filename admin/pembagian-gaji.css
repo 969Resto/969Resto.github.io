@@ -1,0 +1,29 @@
+:root { --ink: #171819; --panel: rgba(39, 41, 42, 0.9); --panel-deep: rgba(27, 29, 30, 0.97); --line: rgba(244, 145, 105, 0.26); --mint: #a9e5c6; --coral: #f49169; --cream: #ffe5b5; }
+html:not(.admin-authenticated) body { visibility: hidden; }
+body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--ink); color: #fff8ef; min-height: 100vh; background-image: linear-gradient(rgba(255, 226, 184, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 226, 184, 0.035) 1px, transparent 1px), radial-gradient(circle at 8% 0%, rgba(244, 145, 105, 0.18), transparent 32%), linear-gradient(135deg, #171819 0%, #242526 52%, #171a19 100%); background-size: 48px 48px, 48px 48px, 100% 100%, 100% 100%; }
+.font-luxury { font-family: 'Cinzel', Georgia, serif; }
+.portal-card { background: linear-gradient(145deg, var(--panel), var(--panel-deep)); border: 1px solid var(--line); backdrop-filter: blur(18px); box-shadow: 0 18px 44px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 231, 194, 0.07); }
+.input-dark { background: rgba(14, 16, 17, 0.84); border: 1px solid rgba(255, 205, 154, 0.22); }
+.input-dark:focus { outline: none; border-color: var(--coral); box-shadow: 0 0 0 3px rgba(244, 145, 105, 0.12); }
+.period-date-input { color-scheme: dark; min-height: 2.5rem; background: #263a3d; border: 1px solid rgba(34, 211, 238, 0.72); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08); accent-color: #22d3ee; }
+.period-date-input:focus { border-color: #67e8f9; box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2); }
+.period-date-input { width: 9.25rem; cursor: pointer; }
+.period-date-input::-webkit-calendar-picker-indicator { display: none; }
+.period-date-picker-button { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; flex: 0 0 2.5rem; border: 1px solid rgba(34, 211, 238, 0.8); border-radius: 0.75rem; background: rgba(34, 211, 238, 0.2); color: #67e8f9; font-size: 1rem; transition: background-color 150ms ease, box-shadow 150ms ease; }
+.period-date-picker-button:hover { background: rgba(34, 211, 238, 0.34); box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.14); }
+.salary-table { background: rgba(13, 15, 16, 0.3); }
+.salary-table th { background: rgba(58, 45, 39, 0.95); color: var(--cream); letter-spacing: 0.12em; }
+.salary-table tbody tr { transition: background-color 160ms ease, box-shadow 160ms ease; }
+.salary-table tbody tr:hover { background: rgba(244, 145, 105, 0.1); box-shadow: inset 3px 0 0 var(--coral); }
+.gold-gradient-text { background: linear-gradient(135deg, #fff0c9, var(--coral) 52%, var(--mint)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.confirm-modal { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(6, 7, 8, 0.78); backdrop-filter: blur(10px); opacity: 0; pointer-events: none; transition: opacity 180ms ease; }
+#confirmModal { z-index: 70; }
+.confirm-modal.is-open { opacity: 1; pointer-events: auto; }
+.confirm-dialog { width: min(100%, 27rem); transform: translateY(10px) scale(0.98); border: 1px solid rgba(244, 145, 105, 0.38); border-radius: 1.25rem; background: linear-gradient(145deg, rgba(57, 45, 41, 0.98), rgba(25, 27, 27, 0.99)); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.58), inset 0 1px 0 rgba(255, 235, 202, 0.08); transition: transform 180ms ease; }
+.confirm-modal.is-open .confirm-dialog { transform: translateY(0) scale(1); }
+.confirm-icon { display: grid; place-items: center; width: 3rem; height: 3rem; border: 1px solid rgba(244, 145, 105, 0.4); border-radius: 1rem; color: var(--coral); background: rgba(244, 145, 105, 0.12); }
+header { border-color: rgba(244, 145, 105, 0.24) !important; }
+footer { border-color: rgba(244, 145, 105, 0.18) !important; }
+::selection { background: rgba(244, 145, 105, 0.3); color: #ffffff; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(244, 145, 105, 0.46); border-radius: 4px; }
