@@ -395,9 +395,19 @@ serve(async (request) => {
       return jsonResponse({ success: true }, 200, origin);
     }
 
-    const webhookUrl = Deno.env.get("DISCORD_WEBHOOK_URL");
+    const action = input && typeof input === "object"
+      ? (input as Record<string, unknown>).action
+      : undefined;
+    const isSalaryAnnouncement = action === "salary_announcement";
+    const webhookSecretName = isSalaryAnnouncement
+      ? "DISCORD_CHAT_RESTO_WEBHOOK_URL"
+      : "DISCORD_WEBHOOK_URL";
+    const webhookUrl = Deno.env.get(webhookSecretName);
     if (!webhookUrl) {
-      return jsonResponse({ error: "Webhook Discord belum dikonfigurasi di Supabase." }, 500, origin);
+      const message = isSalaryAnnouncement
+        ? "Webhook Chat Resto belum dikonfigurasi di Supabase (DISCORD_CHAT_RESTO_WEBHOOK_URL)."
+        : "Webhook Discord belum dikonfigurasi di Supabase.";
+      return jsonResponse({ error: message }, 500, origin);
     }
 
     let payload: Record<string, unknown>;
