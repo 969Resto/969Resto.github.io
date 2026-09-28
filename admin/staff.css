@@ -1,0 +1,14 @@
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #080303;
+  color: #fdfbf7;
+  min-height: 100vh;
+  background-image: radial-gradient(circle at 50% 0%, rgba(136, 19, 19, 0.45) 0%, transparent 60%), radial-gradient(circle at 90% 90%, rgba(217, 119, 6, 0.15) 0%, transparent 50%);
+}
+html:not(.admin-authenticated) body { visibility: hidden; }
+.font-luxury { font-family: 'Cinzel', Georgia, serif; }
+.portal-card { background: linear-gradient(145deg, rgba(28, 12, 12, 0.86), rgba(18, 6, 6, 0.94)); border: 1px solid rgba(212, 175, 55, 0.25); backdrop-filter: blur(16px); }
+.gold-gradient-text { background: linear-gradient(135deg, #fff0b3, #d4af37 50%, #aa8010); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.staff-table th { white-space: nowrap; }
+.staff-table tbody tr { transition: background-color 0.2s ease; }
+.staff-table tbody tr:hover { background-color: rgba(120, 53, 15, 0.25); }

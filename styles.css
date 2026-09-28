@@ -1,0 +1,86 @@
+:root {
+  color-scheme: dark;
+  --resto-ink: #080303;
+  --resto-wine: #881313;
+  --resto-gold: #d4af37;
+  --resto-cream: #fdfbf7;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--resto-cream);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: var(--resto-ink);
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(136, 19, 19, 0.48), transparent 58%),
+    radial-gradient(ellipse at 4% 88%, rgba(217, 119, 6, 0.16), transparent 42%),
+    linear-gradient(145deg, #100606 0%, var(--resto-ink) 55%, #0d0804 100%);
+  background-attachment: fixed;
+}
+
+.font-luxury {
+  font-family: 'Cinzel', Georgia, serif;
+}
+
+.portal-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  background: linear-gradient(145deg, rgba(35, 15, 15, 0.82), rgba(18, 6, 6, 0.9));
+  backdrop-filter: blur(16px);
+  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1), border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+.portal-card::after {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: -120%;
+  width: 70%;
+  height: 100%;
+  content: "";
+  background: linear-gradient(105deg, transparent, rgba(255, 240, 179, 0.08), transparent);
+  transform: skewX(-18deg);
+  transition: left 0.7s ease;
+}
+
+.portal-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(212, 175, 55, 0.75);
+  box-shadow: 0 20px 40px -10px rgba(136, 19, 19, 0.45), 0 0 25px rgba(212, 175, 55, 0.16);
+}
+
+.portal-card:hover::after {
+  left: 150%;
+}
+
+.portal-card:focus-visible,
+header a:focus-visible {
+  outline: 2px solid #f3cc58;
+  outline-offset: 4px;
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #fff0b3 0%, #d4af37 52%, #aa8010 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@media (max-width: 640px) {
+  body {
+    background-attachment: scroll;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
