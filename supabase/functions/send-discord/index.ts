@@ -8,6 +8,7 @@ const allowedOrigins = new Set(
 );
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "https://rdnhbqufxidbdwmxxabf.supabase.co";
 const nhostGraphqlUrl = Deno.env.get("NHOST_GRAPHQL_URL") || "https://xqjnbwhipztjcbcnmzam.graphql.ap-southeast-1.nhost.run/v1";
+const allowedSalaryRoleMentions = new Set(["1529864836987486288", "1529864881782653089"]);
 
 async function isNhostAttendanceAdmin(authorization: string) {
   const response = await fetch(nhostGraphqlUrl, {
@@ -85,6 +86,17 @@ function normalizePayload(value: unknown) {
     content: input.content,
     allowed_mentions: { parse: [] }
   };
+
+  if (input.role_mentions !== undefined) {
+    const roleMentions = input.role_mentions;
+    if (
+      !Array.isArray(roleMentions) || roleMentions.length > allowedSalaryRoleMentions.size ||
+      !roleMentions.every((roleId) => typeof roleId === "string" && allowedSalaryRoleMentions.has(roleId))
+    ) {
+      throw new Error("Mention role tidak valid.");
+    }
+    payload.allowed_mentions = { parse: [], roles: [...new Set(roleMentions)] };
+  }
 
   if (input.embeds !== undefined) {
     if (!Array.isArray(input.embeds) || input.embeds.length > 5) {
