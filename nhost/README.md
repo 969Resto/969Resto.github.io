@@ -14,6 +14,10 @@ The attendance page uses Nhost for shift rows and weekly recap archives. Browser
 5. Assign `attendance_admin` as an allowed role for the three administrator accounts. Keep their default role as `user`.
 6. Keep the Nhost admin secret on a trusted server or function. Never put it in `absensi.html`, a public environment file, or GitHub Pages.
 
+## Database Heartbeat
+
+The GitHub Actions workflow at `.github/workflows/nhost-heartbeat.yml` reads one `attendance_shifts` row every two days using the `public` Hasura role. It needs no secret, but the migration and public select permission above must already be applied. GitHub Actions runs scheduled workflows from the repository's default branch; use the workflow's **Run workflow** action to test it after pushing. A successful run confirms the GraphQL/database query worked at that time, but cannot prevent Nhost maintenance, outages, or platform-initiated pauses.
+
 The browser integration uses the public project endpoints and Nhost Auth sessions. Admin GraphQL requests explicitly select `attendance_admin`; public shift entry explicitly uses `public`. The old client-side PIN is not database authorization.
 
 Existing browser-only shift drafts are kept visible as a local fallback, but are not automatically uploaded or deduplicated against Nhost. Existing browser-only weekly archive snapshots also remain local and do not appear in the Nhost history page until re-saved/imported. Do not clear browser storage until any legacy data you need has been migrated.
