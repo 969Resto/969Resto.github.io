@@ -1188,22 +1188,24 @@ Catatan tambahan: ${catatan}`;
     async function uploadSelectedPhoto() {
       if (!selectedDiscordPhotos.length) return { fotoUrls: [], fotoPaths: [] };
 
+      const { getAttendanceSession } = await nhostModulePromise;
+      const session = await getAttendanceSession();
+      if (!session?.accessToken) throw new Error('Sesi login berakhir. Silakan masuk kembali.');
+
       const uploadedPhotos = await Promise.all(selectedDiscordPhotos.map(async photo => {
-        const extension = photo.name.split('.').pop().toLowerCase() || 'jpg';
-        const filePath = `${Date.now()}-${crypto.randomUUID()}.${extension}`;
-        const { error } = await supabaseClient.storage
-          .from('dokumen-keuangan')
-          .upload(filePath, photo, {
-            contentType: photo.type,
-            upsert: false
-          });
-
-        if (error) throw error;
-
-        const { data } = supabaseClient.storage
-          .from('dokumen-keuangan')
-          .getPublicUrl(filePath);
-        return { url: data.publicUrl, path: filePath };
+        const formData = new FormData();
+        formData.append('photo', photo);
+        const response = await fetch(DISCORD_FUNCTION_URL, {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${session.accessToken}`
+          },
+          body: formData
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || `Unggah foto gagal (status ${response.status})`);
+        return { url: result.url, path: result.path };
       }));
 
       return {
