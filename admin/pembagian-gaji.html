@@ -58,7 +58,7 @@
       <div class="portal-card rounded-2xl p-5"><span class="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Bonus Per Orang</span><strong id="bonusEach" class="mt-2 block text-lg text-emerald-300">$0</strong><span id="loadState" class="mt-2 block text-[11px] text-slate-500">Memuat data staff...</span></div>
     </section>
     <section class="grid grid-cols-2 lg:grid-cols-6 gap-3"><div class="portal-card rounded-xl p-4"><span class="text-[10px] uppercase tracking-wider text-slate-400">Staff Aktif</span><strong id="activeCount" class="mt-1 block text-xl text-white">0</strong></div><div class="portal-card rounded-xl p-4 border-emerald-400/30"><span class="text-[10px] uppercase tracking-wider text-emerald-300">Penerima Gaji</span><strong id="salaryRecipientCount" class="mt-1 block text-xl text-emerald-300">0</strong><span class="mt-1 block text-[10px] text-slate-500">Min. 15 Jam</span></div><div class="portal-card rounded-xl p-4"><span class="text-[10px] uppercase tracking-wider text-slate-400">Total Bobot</span><strong id="weightTotal" class="mt-1 block text-xl text-cyan-300">0</strong></div><div class="portal-card rounded-xl p-4"><span class="text-[10px] uppercase tracking-wider text-slate-400">Penerima Bonus</span><strong id="bonusCount" class="mt-1 block text-xl text-amber-300">0</strong></div><div class="portal-card rounded-xl p-4"><span class="text-[10px] uppercase tracking-wider text-slate-400">Gaji Terhitung</span><strong id="salaryTotal" class="mt-1 block text-lg text-emerald-300">$0</strong></div><div class="portal-card rounded-xl p-4 col-span-2 lg:col-span-1"><span class="text-[10px] uppercase tracking-wider text-slate-400">Total Dibagikan</span><strong id="grandTotal" class="mt-1 block text-lg text-white">$0</strong></div></section>
-    <section class="portal-card rounded-2xl p-4 sm:p-6"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-amber-900/30"><div><h3 class="text-lg font-bold font-luxury text-slate-100">Rincian Per Staff</h3><p class="text-xs text-slate-500 mt-1">Penerima gaji adalah staff dengan jam kerja minimal 15 Jam. Bobot dapat dipilih per staff.</p></div><div class="flex flex-col sm:items-end gap-2"><span id="tableNote" class="text-xs text-emerald-300">-</span><button id="btnCopySalaryRecipients" type="button" class="rounded-lg border border-cyan-500/40 bg-cyan-950/30 px-3 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-900/50"><i class="fa-regular fa-copy mr-1"></i> Salin Nama Penerima</button><span id="recipientCopyStatus" class="sr-only" aria-live="polite"></span></div></div><div class="mt-4 overflow-x-auto rounded-xl border border-amber-900/25"><table class="salary-table w-full min-w-[1080px] border-collapse text-left text-xs"><thead><tr class="text-[10px] uppercase tracking-wider text-amber-200"><th class="px-4 py-3">No</th><th class="px-4 py-3">Nama</th><th class="px-4 py-3">Jabatan</th><th class="px-4 py-3 text-center">Bobot Pilihan</th><th class="px-4 py-3">Jam Kerja</th><th class="px-4 py-3 text-right">Gaji Dasar</th><th class="px-4 py-3 text-right">Bonus</th><th class="px-4 py-3 text-right">Total Diterima</th><th class="px-4 py-3 text-center">Gaji Diberikan</th></tr></thead><tbody id="salaryBody" class="divide-y divide-amber-900/15"></tbody><tfoot id="salaryFoot"></tfoot></table></div></section>
+    <section class="portal-card rounded-2xl p-4 sm:p-6"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-amber-900/30"><div><h3 class="text-lg font-bold font-luxury text-slate-100">Rincian Per Staff</h3><p class="text-xs text-slate-500 mt-1">Penerima gaji adalah staff dengan jam kerja minimal 15 Jam. Bobot dapat dipilih per staff.</p></div><div class="flex flex-col sm:items-end gap-2"><span id="tableNote" class="text-xs text-emerald-300">-</span><div class="flex flex-wrap justify-end gap-2"><button id="btnCopySalaryRecipients" type="button" class="rounded-lg border border-cyan-500/40 bg-cyan-950/30 px-3 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-900/50"><i class="fa-regular fa-copy mr-1"></i> Salin Nama Penerima</button><button id="btnBroadcastSalary" type="button" class="rounded-lg border border-indigo-500/40 bg-indigo-950/30 px-3 py-2 text-xs font-semibold text-indigo-200 transition hover:bg-indigo-900/50"><i class="fa-brands fa-discord mr-1"></i> Siarkan ke Discord</button></div><span id="recipientCopyStatus" class="sr-only" aria-live="polite"></span><span id="discordAnnouncementStatus" class="sr-only" aria-live="polite"></span></div></div><div class="mt-4 overflow-x-auto rounded-xl border border-amber-900/25"><table class="salary-table w-full min-w-[1080px] border-collapse text-left text-xs"><thead><tr class="text-[10px] uppercase tracking-wider text-amber-200"><th class="px-4 py-3">No</th><th class="px-4 py-3">Nama</th><th class="px-4 py-3">Jabatan</th><th class="px-4 py-3 text-center">Bobot Pilihan</th><th class="px-4 py-3">Jam Kerja</th><th class="px-4 py-3 text-right">Gaji Dasar</th><th class="px-4 py-3 text-right">Bonus</th><th class="px-4 py-3 text-right">Total Diterima</th><th class="px-4 py-3 text-center">Gaji Diberikan</th></tr></thead><tbody id="salaryBody" class="divide-y divide-amber-900/15"></tbody><tfoot id="salaryFoot"></tfoot></table></div></section>
     <section class="portal-card rounded-2xl p-4 sm:p-6"><div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-4 border-b border-amber-900/30"><div><h3 class="text-lg font-bold font-luxury text-slate-100">Riwayat Pembagian Gaji</h3><p class="text-xs text-slate-500 mt-1">Simpan snapshot dan muat kembali kapan saja di browser ini.</p></div><div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto"><input id="historyLabel" type="text" placeholder="Periode, contoh: Minggu 25 September" class="input-dark min-w-0 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400 sm:w-72" /><button id="btnSaveHistory" type="button" class="rounded-xl bg-emerald-600/90 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-500 transition whitespace-nowrap"><i class="fa-solid fa-bookmark mr-1"></i> Simpan Riwayat</button></div></div><div class="mt-4 overflow-x-auto rounded-xl border border-amber-900/25"><table class="salary-table w-full min-w-[820px] border-collapse text-left text-xs"><thead><tr class="text-[10px] uppercase tracking-wider text-amber-200"><th class="px-4 py-3">Periode</th><th class="px-4 py-3">Disimpan</th><th class="px-4 py-3 text-right">Gaji Dasar</th><th class="px-4 py-3 text-right">Total Bonus</th><th class="px-4 py-3 text-right">Total Dibagikan</th><th class="px-4 py-3 text-center">Staff</th><th class="px-4 py-3 text-center">Aksi</th></tr></thead><tbody id="historyBody" class="divide-y divide-amber-900/15"></tbody></table></div><p id="historyEmpty" class="hidden py-8 text-center text-xs text-slate-500">Belum ada riwayat pembagian gaji.</p></section>
   </main>
   <div id="confirmModal" class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMessage">
@@ -78,6 +78,8 @@
   <script>
     const SUPABASE_URL = 'https://rdnhbqufxidbdwmxxabf.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_e1eww7RhRX3_l95kwvyM4Q_LysMicKv';
+    const DISCORD_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/send-discord`;
+    const SALARY_ANNOUNCEMENT_ROLE_IDS = ['1529864836987486288', '1529864881782653089'];
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const roleOrder = ['CEO', 'CFO', 'Head Manager', 'Assistant Manager', 'Team Leader', 'Head Chef', 'Assistant Chef', 'Worker', 'Recruit', 'Helper'];
     const weights = { CEO: 6, CFO: 5.5, 'Head Manager': 5, 'Assistant Manager': 4.5, 'Team Leader': 4, 'Head Chef': 4, 'Assistant Chef': 3.5, Worker: 2.5, Recruit: 2, Helper: 1 };
@@ -157,6 +159,68 @@
 
       window.setTimeout(() => { button.innerHTML = originalLabel; }, 2500);
     }
+    function buildSalaryAnnouncement() {
+      const recipients = currentRows().filter(staff => staff.hours !== '< 15 Jam');
+      if (!recipients.length) throw new Error('Belum ada staff yang memenuhi syarat menerima gaji.');
+
+      const periodDate = document.getElementById('periodDate').value;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(periodDate)) throw new Error('Pilih tanggal periode pembagian gaji terlebih dahulu.');
+      const formattedDate = periodDate.split('-').reverse().join('/');
+      const content = [
+        `## PEMBAGIAN GAJI ${formattedDate}`,
+        'Untuk nama yang disebutkan bisa mengambil gaji ke saya',
+        ...recipients.map(staff => `- ${staff.name}`),
+        '',
+        'Yang belum mendapatkan gaji jangan patah semangat bisa dinaikan kontribusi duty nya ya.',
+        `||<@&${SALARY_ANNOUNCEMENT_ROLE_IDS[0]}>|| ||<@&${SALARY_ANNOUNCEMENT_ROLE_IDS[1]}>||`
+      ].join('\n');
+
+      return { content, role_mentions: SALARY_ANNOUNCEMENT_ROLE_IDS };
+    }
+    async function sendSalaryAnnouncement(payload) {
+      const button = document.getElementById('btnBroadcastSalary');
+      const status = document.getElementById('discordAnnouncementStatus');
+      const originalLabel = '<i class="fa-brands fa-discord mr-1"></i> Siarkan ke Discord';
+      button.disabled = true;
+      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Mengirim...';
+
+      try {
+        const { getAttendanceSession } = await import('../nhost/client.js');
+        const session = await getAttendanceSession();
+        if (!session?.accessToken) throw new Error('Sesi login berakhir. Silakan masuk kembali.');
+
+        const response = await fetch(DISCORD_FUNCTION_URL, {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${session.accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || `Pengiriman gagal (status ${response.status})`);
+
+        button.innerHTML = '<i class="fa-solid fa-check mr-1"></i> Terkirim';
+        status.textContent = 'Pengumuman pembagian gaji berhasil dikirim ke Discord.';
+      } catch (error) {
+        button.innerHTML = '<i class="fa-solid fa-circle-exclamation mr-1"></i> Gagal Mengirim';
+        status.textContent = `Gagal mengirim pengumuman Discord: ${error.message}`;
+      } finally {
+        button.disabled = false;
+        window.setTimeout(() => { button.innerHTML = originalLabel; }, 3000);
+      }
+    }
+    function requestSalaryAnnouncement() {
+      try {
+        const payload = buildSalaryAnnouncement();
+        openConfirmModal(payload.content, 'Kirim ke Discord', () => sendSalaryAnnouncement(payload));
+      } catch (error) {
+        document.getElementById('discordAnnouncementStatus').textContent = error.message;
+        document.getElementById('btnBroadcastSalary').innerHTML = '<i class="fa-solid fa-circle-exclamation mr-1"></i> Tidak Dapat Mengirim';
+        window.setTimeout(() => { document.getElementById('btnBroadcastSalary').innerHTML = '<i class="fa-brands fa-discord mr-1"></i> Siarkan ke Discord'; }, 2500);
+      }
+    }
     function calculate() {
       const rows = currentRows(); const eligibleRows = rows.filter(staff => staff.hours !== '< 15 Jam'); const totalWeight = eligibleRows.reduce((sum, staff) => sum + staff.weight, 0); const bonusRows = eligibleRows.filter(staff => staff.hours === '20 Jam'); const bonusEach = bonusRows.length ? amount('bonusPool') / bonusRows.length : 0; const salaryPool = amount('salaryPool');
       rows.forEach(staff => { const eligible = staff.hours !== '< 15 Jam'; staff.baseSalary = eligible && totalWeight ? salaryPool * staff.weight / totalWeight : 0; staff.bonus = staff.hours === '20 Jam' ? bonusEach : 0; staff.total = staff.baseSalary + staff.bonus; });
@@ -174,6 +238,7 @@
     document.getElementById('btnResetHours').addEventListener('click', resetHours);
     document.getElementById('btnResetPaid').addEventListener('click', resetPaidStatus);
     document.getElementById('btnCopySalaryRecipients').addEventListener('click', copySalaryRecipientNames);
+    document.getElementById('btnBroadcastSalary').addEventListener('click', requestSalaryAnnouncement);
     document.getElementById('btnNewAllocation').addEventListener('click', () => openChoiceConfirmModal('Pilih apakah pembagian saat ini akan disimpan ke history atau dibuang. History lama tidak akan dihapus. Setelah pilihan, saldo menjadi 0, jam kerja direset ke < 15 Jam, status gaji kembali Belum, dan daftar staff terbaru dimuat.', 'Simpan & Lanjutkan', () => startNewAllocation(true), 'Hapus Saja & Lanjutkan', () => startNewAllocation(false)));
     document.getElementById('btnSaveHistory').addEventListener('click', () => saveHistory());
     document.getElementById('historyBody').addEventListener('click', event => { const button = event.target.closest('[data-history-action]'); if (!button) return; const id = button.dataset.historyId; if (button.dataset.historyAction === 'edit') openEditHistory(id); if (button.dataset.historyAction === 'load') openConfirmModal('Data form saat ini akan digantikan oleh snapshot riwayat yang dipilih.', 'Muat Riwayat', () => loadHistory(id)); if (button.dataset.historyAction === 'delete') openConfirmModal('Riwayat pembagian ini akan dihapus permanen dari daftar online dan cache lokal.', 'Hapus Riwayat', () => deleteHistory(id)); });
