@@ -182,7 +182,11 @@
         `||<@&${SALARY_ANNOUNCEMENT_ROLE_IDS[0]}>|| ||<@&${SALARY_ANNOUNCEMENT_ROLE_IDS[1]}>||`
       ].join('\n');
 
-      return { content, role_mentions: SALARY_ANNOUNCEMENT_ROLE_IDS };
+      return {
+        action: 'salary_announcement',
+        content,
+        role_mentions: SALARY_ANNOUNCEMENT_ROLE_IDS
+      };
     }
     async function sendSalaryAnnouncement(payload) {
       const button = document.getElementById('btnBroadcastSalary');
