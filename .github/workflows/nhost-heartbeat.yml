@@ -1,0 +1,26 @@
+name: Nhost heartbeat
+
+on:
+  schedule:
+    - cron: '17 4 */2 * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query Nhost database
+        env:
+          NHOST_GRAPHQL_URL: https://xqjnbwhipztjcbcnmzam.graphql.ap-southeast-1.nhost.run/v1
+        run: |
+          response=$(curl --fail-with-body --silent --show-error "$NHOST_GRAPHQL_URL" \
+            -H 'Content-Type: application/json' \
+            -H 'x-hasura-role: public' \
+            --data '{"query":"query NhostHeartbeat { attendance_shifts(limit: 1) { id } }"}')
+
+          if ! jq -e '.errors == null and .data.attendance_shifts != null' <<< "$response" >/dev/null; then
+            printf '%s\n' "$response"
+            exit 1
+          fi
