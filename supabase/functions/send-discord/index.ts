@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 const allowedOrigins = new Set(
-  (Deno.env.get("ALLOWED_ORIGINS") || "https://969resto.github.io,http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:8000,http://localhost:8000")
+  (Deno.env.get("ALLOWED_ORIGINS") || "https://969resto.github.io,https://969resto.my.id,http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:8000,http://localhost:8000")
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean)
