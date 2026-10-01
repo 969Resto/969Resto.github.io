@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>969 Resto - Data Kerjasama</title>
+  <link rel="icon" type="image/png" href="../Invoice/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="kerjasama.css" />
+</head>
+<body class="min-h-screen p-4 sm:p-6 md:p-8">
+  <header class="page-header mx-auto flex w-full max-w-7xl flex-col gap-4 pb-6 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex items-center gap-4">
+      <img src="../Invoice/logo.png" alt="969 Resto" class="h-12 w-12 rounded-xl border border-amber-500/30 object-contain p-1">
+      <div>
+        <h1 class="font-luxury text-xl font-bold tracking-wider text-amber-100 sm:text-2xl">969 RESTO</h1>
+        <p class="mt-1 text-xs uppercase tracking-widest text-amber-200/60">Mitra & Operasional</p>
+      </div>
+    </div>
+    <nav class="flex flex-wrap gap-2">
+      <a href="index.html" class="nav-button"><i class="fa-solid fa-arrow-left"></i><span>Dashboard Admin</span></a>
+      <a href="../index.html" class="nav-button"><i class="fa-solid fa-house"></i><span>Dashboard Utama</span></a>
+    </nav>
+  </header>
+
+  <main class="mx-auto w-full max-w-7xl py-7">
+    <section class="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-rose-300">Operasional Resto</p>
+        <h2 class="font-luxury text-2xl font-bold text-slate-100 sm:text-3xl">Data Kerjasama</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">Kelola periode kerjasama dan kebutuhan pengiriman, lalu kirim pengingat ke channel Chat Resto.</p>
+      </div>
+      <button id="btnAddPartnership" type="button" class="primary-button"><i class="fa-solid fa-plus"></i><span>Tambah Kerjasama</span></button>
+    </section>
+
+    <section class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Ringkasan kerjasama">
+      <div class="stat-panel"><span class="stat-icon text-rose-300"><i class="fa-solid fa-handshake"></i></span><div><p>Total Data</p><strong id="totalCount">0</strong></div></div>
+      <div class="stat-panel"><span class="stat-icon text-emerald-300"><i class="fa-solid fa-arrow-trend-up"></i></span><div><p>Status Aktif</p><strong id="activeCount">0</strong></div></div>
+      <div class="stat-panel"><span class="stat-icon text-amber-300"><i class="fa-solid fa-truck"></i></span><div><p>Butuh Pengiriman</p><strong id="deliveryCount">0</strong></div></div>
+    </section>
+
+    <section class="data-panel overflow-hidden">
+      <div class="flex flex-col gap-3 border-b border-amber-900/30 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input id="searchPartnership" type="search" placeholder="Cari nama partner atau catatan..." aria-label="Cari kerjasama"></label>
+          <select id="statusFilter" class="filter-select" aria-label="Filter status">
+            <option value="active">Kerjasama Aktif</option>
+            <option value="all">Semua Status</option>
+            <option value="completed">Selesai</option>
+            <option value="cancelled">Dibatalkan</option>
+          </select>
+        </div>
+        <p id="resultCount" class="text-xs text-slate-500" aria-live="polite"></p>
+      </div>
+      <div class="flex flex-col gap-3 border-b border-amber-900/20 bg-black/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <p id="selectionCount" class="text-xs text-slate-400" aria-live="polite">0 kerjasama dipilih (maksimal 5 per pesan)</p>
+        <div class="flex flex-wrap gap-2">
+          <button id="btnToggleSelectAll" type="button" class="secondary-button"><i class="fa-solid fa-check-double"></i><span>Pilih Semua</span></button>
+          <button id="btnSendSelected" type="button" class="primary-button" disabled><i class="fa-brands fa-discord"></i><span>Kirim Terpilih</span></button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[900px] border-collapse text-left text-xs text-slate-300">
+          <thead class="bg-amber-950/30 text-[10px] uppercase tracking-wider text-amber-300">
+            <tr class="border-b border-amber-900/40">
+              <th class="px-4 py-4"><span class="sr-only">Pilih</span></th>
+              <th class="px-5 py-4">Partner & Catatan</th>
+              <th class="px-5 py-4">Periode</th>
+              <th class="px-5 py-4">Pengiriman</th>
+              <th class="px-5 py-4">Status</th>
+              <th class="px-5 py-4 text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="partnershipBody" class="divide-y divide-amber-900/20"></tbody>
+        </table>
+      </div>
+      <p id="pageStatus" class="min-h-10 px-5 py-3 text-xs text-slate-400" role="status" aria-live="polite">Memuat data kerjasama...</p>
+    </section>
+  </main>
+
+  <div id="partnershipModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <form id="partnershipForm" class="form-panel">
+      <div class="mb-5 flex items-start justify-between border-b border-amber-900/30 pb-4">
+        <div><h3 id="modalTitle" class="font-luxury text-lg font-bold text-amber-100">Tambah Kerjasama</h3><p class="mt-1 text-xs text-slate-400">Perbarui informasi operasional partner.</p></div>
+        <button id="btnCloseModal" type="button" class="icon-button" aria-label="Tutup form"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <input id="partnershipId" type="hidden">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label class="form-label sm:col-span-2">Nama partner<input id="partnerName" type="text" maxlength="160" required class="form-input" placeholder="Nama perusahaan atau partner"></label>
+        <label class="form-label">Tanggal mulai<input id="startsOn" type="date" required class="form-input"></label>
+        <label class="form-label">Tanggal selesai<input id="endsOn" type="date" required class="form-input"></label>
+        <label class="form-label">Status kerjasama<select id="partnershipStatus" class="form-input"><option value="active">Aktif</option><option value="completed">Selesai</option><option value="cancelled">Dibatalkan</option></select></label>
+        <label class="form-label">Pengiriman diperlukan?<select id="deliveryRequired" class="form-input"><option value="true">Ya, perlu dikirim</option><option value="false">Tidak perlu pengiriman</option></select></label>
+        <label id="packageCountField" class="form-label">Total paket<input id="packageRange" type="text" maxlength="20" inputmode="text" class="form-input" placeholder="Contoh: 10-15"></label>
+        <label id="deliveryScheduleField" class="form-label sm:col-span-2">Jadwal / waktu pengiriman<input id="deliverySchedule" type="text" maxlength="300" class="form-input" placeholder="Contoh: Senin-Jumat, pukul 10.00-15.00"></label>
+        <label class="form-label sm:col-span-2">Catatan<textarea id="partnershipNotes" rows="3" maxlength="2000" class="form-input resize-y" placeholder="Detail kesepakatan atau catatan untuk staff"></textarea></label>
+      </div>
+      <div class="mt-6 flex justify-end gap-2">
+        <button id="btnCancelModal" type="button" class="secondary-button">Batal</button>
+        <button id="btnSavePartnership" type="submit" class="primary-button"><i class="fa-solid fa-floppy-disk"></i><span>Simpan Kerjasama</span></button>
+      </div>
+    </form>
+  </div>
+
+  <div id="actionConfirmModal" class="modal-backdrop hidden" role="alertdialog" aria-modal="true" aria-labelledby="actionConfirmTitle" aria-describedby="actionConfirmMessage">
+    <div class="form-panel action-confirm-panel">
+      <div class="mb-4 flex items-start justify-between gap-4">
+        <div><h3 id="actionConfirmTitle" class="font-luxury text-lg font-bold text-amber-100">Konfirmasi</h3><p id="actionConfirmMessage" class="confirm-message mt-2 text-sm leading-relaxed text-slate-300"></p></div>
+        <button id="btnCloseActionConfirm" type="button" class="icon-button" aria-label="Tutup konfirmasi"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="mt-6 flex justify-end gap-2">
+        <button id="btnCancelActionConfirm" type="button" class="secondary-button">Batal</button>
+        <button id="btnAcceptActionConfirm" type="button" class="primary-button">Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="mx-auto w-full max-w-7xl border-t border-amber-900/30 py-6 text-center text-xs text-slate-500"><p>&copy; 2026 <strong>969 Resto</strong> &bull; Internal Management System</p></footer>
+
+  <script>
+    const SUPABASE_URL = 'https://rdnhbqufxidbdwmxxabf.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_e1eww7RhRX3_l95kwvyM4Q_LysMicKv';
+    const DISCORD_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/send-discord`;
+    const statusLabels = { active: 'Aktif', completed: 'Selesai', cancelled: 'Dibatalkan' };
+    let partnerships = [];
+    const selectedPartnershipIds = new Set();
+    let adminSession;
+    let actionConfirmResolver = null;
+    let actionConfirmPreviousFocus = null;
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
+    }
+    function formatDate(value) {
+      if (!value) return '-';
+      return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`));
+    }
+    function setPageStatus(message, isError = false) {
+      const status = document.getElementById('pageStatus');
+      status.textContent = message;
+      status.classList.toggle('text-rose-300', isError);
+      status.classList.toggle('text-slate-400', !isError);
+    }
+    function showActionConfirm({ title, message, confirmLabel = 'Lanjutkan', danger = false }) {
+      return new Promise(resolve => {
+        actionConfirmResolver = resolve;
+        actionConfirmPreviousFocus = document.activeElement;
+        document.getElementById('actionConfirmTitle').textContent = title;
+        document.getElementById('actionConfirmMessage').textContent = message;
+        const confirmButton = document.getElementById('btnAcceptActionConfirm');
+        confirmButton.textContent = confirmLabel;
+        confirmButton.classList.toggle('danger-button', danger);
+        document.getElementById('actionConfirmModal').classList.remove('hidden');
+        document.getElementById('actionConfirmModal').classList.add('flex');
+        document.body.classList.add('overflow-hidden');
+        confirmButton.focus();
+      });
+    }
+    function closeActionConfirm(confirmed) {
+      const modal = document.getElementById('actionConfirmModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.classList.remove('overflow-hidden');
+      if (actionConfirmResolver) actionConfirmResolver(confirmed);
+      actionConfirmResolver = null;
+      actionConfirmPreviousFocus?.focus();
+      actionConfirmPreviousFocus = null;
+    }
+    async function callAdminFunction(payload) {
+      if (!adminSession?.accessToken) throw new Error('Sesi admin berakhir. Silakan masuk kembali.');
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 25000);
+      let response;
+      try {
+        response = await fetch(DISCORD_FUNCTION_URL, {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${adminSession.accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+      } catch (error) {
+        if (error.name === 'AbortError') throw new Error('Server tidak merespons dalam 25 detik. Periksa koneksi lalu coba lagi.');
+        throw new Error(`Tidak dapat terhubung ke server: ${error.message}`);
+      } finally {
+        window.clearTimeout(timeoutId);
+      }
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Permintaan gagal (status ${response.status}).`);
+      return result;
+    }
+    function visiblePartnerships() {
+      const query = document.getElementById('searchPartnership').value.trim().toLocaleLowerCase('id-ID');
+      const status = document.getElementById('statusFilter').value;
+      return partnerships.filter(item => (status === 'all' || item.status === status) && `${item.partner_name} ${item.notes} ${item.delivery_schedule} ${item.package_range || ''}`.toLocaleLowerCase('id-ID').includes(query));
+    }
+    function renderPartnerships() {
+      const rows = visiblePartnerships();
+      document.getElementById('totalCount').textContent = partnerships.length;
+      document.getElementById('activeCount').textContent = partnerships.filter(item => item.status === 'active').length;
+      document.getElementById('deliveryCount').textContent = partnerships.filter(item => item.status === 'active' && item.delivery_required).length;
+      document.getElementById('resultCount').textContent = `${rows.length} data ditampilkan`;
+      document.getElementById('selectionCount').textContent = `${selectedPartnershipIds.size} kerjasama dipilih (maksimal 5 per pesan)`;
+      document.getElementById('btnSendSelected').disabled = selectedPartnershipIds.size < 1 || selectedPartnershipIds.size > 5;
+      const visibleActiveRows = rows.filter(item => item.status === 'active');
+      const allVisibleSelected = visibleActiveRows.length > 0 && visibleActiveRows.every(item => selectedPartnershipIds.has(item.id));
+      const selectAllButton = document.getElementById('btnToggleSelectAll');
+      selectAllButton.disabled = visibleActiveRows.length === 0;
+      selectAllButton.innerHTML = allVisibleSelected
+        ? '<i class="fa-solid fa-xmark"></i><span>Batal Pilihan</span>'
+        : '<i class="fa-solid fa-check-double"></i><span>Pilih Semua</span>';
+      document.getElementById('partnershipBody').innerHTML = rows.length ? rows.map(item => `
+        <tr class="transition hover:bg-white/[0.025]">
+          <td class="px-4 py-4 align-top"><input type="checkbox" data-select-partnership data-id="${escapeHtml(item.id)}" class="partnership-checkbox" aria-label="Pilih ${escapeHtml(item.partner_name)}" ${selectedPartnershipIds.has(item.id) ? 'checked' : ''} ${item.status !== 'active' ? 'disabled' : ''}></td>
+          <td class="px-5 py-4 align-top"><strong class="block text-sm font-semibold text-slate-100">${escapeHtml(item.partner_name)}</strong><span class="mt-1 block max-w-sm whitespace-pre-wrap text-[11px] leading-relaxed text-slate-500">${escapeHtml(item.notes || 'Tidak ada catatan')}</span></td>
+          <td class="whitespace-nowrap px-5 py-4 align-top text-slate-300">${escapeHtml(formatDate(item.starts_on))}<span class="mx-1 text-slate-600">-</span>${escapeHtml(formatDate(item.ends_on))}</td>
+          <td class="max-w-xs px-5 py-4 align-top">${item.delivery_required ? `<span class="font-semibold text-amber-200">${escapeHtml(item.package_range ? `${item.package_range} paket` : 'Jumlah paket belum dicatat')}</span><span class="mt-1 block whitespace-pre-wrap leading-relaxed text-slate-400">${escapeHtml(item.delivery_schedule)}</span>` : '<span class="text-slate-500">Tidak perlu</span>'}</td>
+          <td class="px-5 py-4 align-top"><span class="status-badge status-${escapeHtml(item.status)}">${escapeHtml(statusLabels[item.status] || item.status)}</span></td>
+          <td class="px-5 py-4 align-top"><div class="flex justify-end gap-1.5">
+            <button type="button" data-action="remind" data-id="${escapeHtml(item.id)}" class="row-action remind-action" title="Kirim pengingat ke Chat Resto" aria-label="Kirim pengingat ${escapeHtml(item.partner_name)}" ${item.status !== 'active' ? 'disabled' : ''}><i class="fa-brands fa-discord"></i></button>
+            <button type="button" data-action="edit" data-id="${escapeHtml(item.id)}" class="row-action" title="Edit kerjasama" aria-label="Edit ${escapeHtml(item.partner_name)}"><i class="fa-solid fa-pen"></i></button>
+            <button type="button" data-action="delete" data-id="${escapeHtml(item.id)}" class="row-action delete-action" title="Hapus kerjasama" aria-label="Hapus ${escapeHtml(item.partner_name)}"><i class="fa-solid fa-trash"></i></button>
+          </div></td>
+        </tr>`).join('') : '<tr><td colspan="6" class="px-5 py-12 text-center text-sm text-slate-500">Tidak ada data kerjasama yang cocok.</td></tr>';
+    }
+    async function loadPartnerships() {
+      setPageStatus('Memuat data kerjasama...');
+      try {
+        const result = await callAdminFunction({ action: 'list_partnerships' });
+        partnerships = Array.isArray(result.data) ? result.data : [];
+        const activeIds = new Set(partnerships.filter(item => item.status === 'active').map(item => item.id));
+        selectedPartnershipIds.forEach(id => { if (!activeIds.has(id)) selectedPartnershipIds.delete(id); });
+        renderPartnerships();
+        setPageStatus(partnerships.length ? 'Data kerjasama tersinkron dari database.' : 'Belum ada data kerjasama.');
+      } catch (error) {
+        setPageStatus(error.message, true);
+      }
+    }
+    function setModal(open) {
+      const modal = document.getElementById('partnershipModal');
+      modal.classList.toggle('hidden', !open);
+      modal.classList.toggle('flex', open);
+      document.body.classList.toggle('overflow-hidden', open);
+    }
+    function resetForm() {
+      document.getElementById('partnershipForm').reset();
+      document.getElementById('partnershipId').value = '';
+      document.getElementById('partnershipStatus').value = 'active';
+      updateDeliveryField();
+    }
+    function updateDeliveryField() {
+      const required = document.getElementById('deliveryRequired').value === 'true';
+      const field = document.getElementById('deliveryScheduleField');
+      const input = document.getElementById('deliverySchedule');
+      const packageField = document.getElementById('packageCountField');
+      const packageInput = document.getElementById('packageRange');
+      field.classList.toggle('hidden', !required);
+      input.required = required;
+      input.disabled = !required;
+      packageField.classList.toggle('hidden', !required);
+      packageInput.required = required;
+      packageInput.disabled = !required;
+      if (!required) {
+        input.value = '';
+        packageInput.value = '';
+      }
+    }
+    function openNewPartnership() {
+      resetForm();
+      document.getElementById('modalTitle').textContent = 'Tambah Kerjasama';
+      setModal(true);
+      document.getElementById('partnerName').focus();
+    }
+    function openEditPartnership(item) {
+      resetForm();
+      document.getElementById('modalTitle').textContent = 'Edit Kerjasama';
+      document.getElementById('partnershipId').value = item.id;
+      document.getElementById('partnerName').value = item.partner_name;
+      document.getElementById('startsOn').value = item.starts_on;
+      document.getElementById('endsOn').value = item.ends_on;
+      document.getElementById('partnershipStatus').value = item.status;
+      document.getElementById('deliveryRequired').value = String(item.delivery_required);
+      document.getElementById('packageRange').value = item.package_range ?? '';
+      document.getElementById('deliverySchedule').value = item.delivery_schedule || '';
+      document.getElementById('partnershipNotes').value = item.notes || '';
+      updateDeliveryField();
+      setModal(true);
+      document.getElementById('partnerName').focus();
+    }
+    document.getElementById('btnAddPartnership').addEventListener('click', openNewPartnership);
+    document.getElementById('btnAcceptActionConfirm').addEventListener('click', () => closeActionConfirm(true));
+    document.getElementById('btnCancelActionConfirm').addEventListener('click', () => closeActionConfirm(false));
+    document.getElementById('btnCloseActionConfirm').addEventListener('click', () => closeActionConfirm(false));
+    document.getElementById('actionConfirmModal').addEventListener('click', event => { if (event.target.id === 'actionConfirmModal') closeActionConfirm(false); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && actionConfirmResolver) closeActionConfirm(false); });
+    document.getElementById('btnCloseModal').addEventListener('click', () => setModal(false));
+    document.getElementById('btnCancelModal').addEventListener('click', () => setModal(false));
+    document.getElementById('partnershipModal').addEventListener('click', event => { if (event.target.id === 'partnershipModal') setModal(false); });
+    document.getElementById('deliveryRequired').addEventListener('change', updateDeliveryField);
+    document.getElementById('searchPartnership').addEventListener('input', renderPartnerships);
+    document.getElementById('statusFilter').addEventListener('change', renderPartnerships);
+    document.getElementById('btnToggleSelectAll').addEventListener('click', () => {
+      const visibleActiveRows = visiblePartnerships().filter(item => item.status === 'active');
+      const additions = visibleActiveRows.filter(item => !selectedPartnershipIds.has(item.id));
+      if (!additions.length) {
+        visibleActiveRows.forEach(item => selectedPartnershipIds.delete(item.id));
+      } else if (selectedPartnershipIds.size + additions.length > 5) {
+        setPageStatus('Pilihan yang terlihat melebihi batas 5 kerjasama per pesan. Gunakan pencarian atau filter.', true);
+        return;
+      } else {
+        additions.forEach(item => selectedPartnershipIds.add(item.id));
+      }
+      renderPartnerships();
+    });
+    document.getElementById('partnershipBody').addEventListener('change', event => {
+      const checkbox = event.target.closest('input[data-select-partnership]');
+      if (!checkbox) return;
+      if (checkbox.checked && selectedPartnershipIds.size >= 5) {
+        checkbox.checked = false;
+        setPageStatus('Maksimal 5 kerjasama dapat dikirim dalam satu pesan Discord.', true);
+        return;
+      }
+      if (checkbox.checked) selectedPartnershipIds.add(checkbox.dataset.id);
+      else selectedPartnershipIds.delete(checkbox.dataset.id);
+      renderPartnerships();
+    });
+
+    document.getElementById('btnSendSelected').addEventListener('click', async () => {
+      const selected = partnerships.filter(item => selectedPartnershipIds.has(item.id) && item.status === 'active');
+      if (!selected.length || selected.length > 5) return;
+      const names = selected.map(item => `- ${item.partner_name}`).join('\n');
+      if (!await showActionConfirm({
+        title: 'Kirim Pengingat Kerjasama',
+        message: `Kirim ${selected.length} kerjasama dalam satu pesan dan mention @Worker serta @Recruit?\n\n${names}`,
+        confirmLabel: 'Kirim ke Discord'
+      })) return;
+      const button = document.getElementById('btnSendSelected');
+      button.disabled = true;
+      button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Mengirim...</span>';
+      setPageStatus(`Mengirim ${selected.length} kerjasama dan mention @Worker serta @Recruit...`);
+      try {
+        await callAdminFunction({ action: 'partnership_batch_reminder', ids: selected.map(item => item.id) });
+        selectedPartnershipIds.clear();
+        setPageStatus(`${selected.length} kerjasama berhasil dikirim dalam satu pesan ke Chat Resto.`);
+      } catch (error) {
+        setPageStatus(error.message, true);
+      } finally {
+        button.innerHTML = '<i class="fa-brands fa-discord"></i><span>Kirim Terpilih</span>';
+        renderPartnerships();
+      }
+    });
+
+    document.getElementById('partnershipForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      const button = document.getElementById('btnSavePartnership');
+      const record = {
+        id: document.getElementById('partnershipId').value || undefined,
+        partner_name: document.getElementById('partnerName').value.trim(),
+        starts_on: document.getElementById('startsOn').value,
+        ends_on: document.getElementById('endsOn').value,
+        delivery_required: document.getElementById('deliveryRequired').value === 'true',
+        package_range: document.getElementById('deliveryRequired').value === 'true' ? document.getElementById('packageRange').value.trim() : null,
+        delivery_schedule: document.getElementById('deliverySchedule').value.trim(),
+        status: document.getElementById('partnershipStatus').value,
+        notes: document.getElementById('partnershipNotes').value.trim()
+      };
+      if (record.ends_on < record.starts_on) {
+        setPageStatus('Tanggal selesai harus sama dengan atau setelah tanggal mulai.', true);
+        return;
+      }
+      button.disabled = true;
+      try {
+        await callAdminFunction({ action: 'save_partnership', record });
+        setModal(false);
+        setPageStatus('Data kerjasama berhasil disimpan.');
+        await loadPartnerships();
+      } catch (error) {
+        setPageStatus(error.message, true);
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.getElementById('partnershipBody').addEventListener('click', async event => {
+      const button = event.target.closest('button[data-action]');
+      if (!button || button.disabled) return;
+      const item = partnerships.find(entry => entry.id === button.dataset.id);
+      if (!item) return;
+      if (button.dataset.action === 'edit') openEditPartnership(item);
+      if (button.dataset.action === 'delete' && await showActionConfirm({
+        title: 'Hapus Kerjasama',
+        message: `Data kerjasama ${item.partner_name} akan dihapus permanen.`,
+        confirmLabel: 'Hapus Data',
+        danger: true
+      })) {
+        button.disabled = true;
+        try {
+          await callAdminFunction({ action: 'delete_partnership', id: item.id });
+          setPageStatus('Data kerjasama berhasil dihapus.');
+          await loadPartnerships();
+        } catch (error) {
+          setPageStatus(error.message, true);
+          button.disabled = false;
+        }
+      }
+      if (button.dataset.action === 'remind' && await showActionConfirm({
+        title: 'Kirim Pengingat',
+        message: `Kirim pengingat kerjasama ${item.partner_name} ke Discord Chat Resto?`,
+        confirmLabel: 'Kirim ke Discord'
+      })) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        try {
+          await callAdminFunction({ action: 'partnership_reminder', partnership: item });
+          setPageStatus(`Pengingat ${item.partner_name} berhasil dikirim ke Chat Resto.`);
+        } catch (error) {
+          setPageStatus(error.message, true);
+        } finally {
+          renderPartnerships();
+        }
+      }
+    });
+
+    (async () => {
+      const { ensureAttendanceAdmin, getAttendanceSession } = await import('../nhost/client.js');
+      if (!await ensureAttendanceAdmin()) return;
+      adminSession = await getAttendanceSession();
+      await loadPartnerships();
+    })().catch(error => setPageStatus(error.message || 'Tidak dapat memulai halaman kerjasama.', true));
+  </script>
+</body>
+</html>

@@ -219,7 +219,19 @@
           <div class="pt-4 border-t border-amber-900/30 flex items-center justify-between text-xs font-bold text-cyan-300 group-hover:translate-x-1 transition-transform"><span>Buka Pembagian Gaji</span><i class="fa-solid fa-arrow-right"></i></div>
         </a>
 
-
+        <!-- 6. KERJASAMA -->
+        <a href="kerjasama.html" class="portal-card rounded-2xl p-6 sm:p-7 flex flex-col justify-between group relative overflow-hidden">
+          <div class="absolute -right-8 -top-8 w-28 h-28 bg-rose-600/10 rounded-full blur-2xl group-hover:bg-rose-500/20 transition-all"></div>
+          <div>
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500 to-red-700 flex items-center justify-center text-white text-xl font-bold mb-5 shadow-lg shadow-rose-500/20 group-hover:scale-105 transition-transform">
+              <i class="fa-solid fa-handshake"></i>
+            </div>
+            <span class="text-[10.5px] font-bold tracking-widest text-rose-300 uppercase font-luxury">Mitra Resto</span>
+            <h3 class="text-xl font-bold text-slate-100 group-hover:text-rose-300 transition-colors mt-1 mb-2 font-luxury">Data Kerjasama</h3>
+            <p class="text-xs text-slate-400 leading-relaxed mb-6">Pantau kerjasama berjalan, kebutuhan pengiriman, dan kirim pengingat ke channel Chat Resto.</p>
+          </div>
+          <div class="pt-4 border-t border-amber-900/30 flex items-center justify-between text-xs font-bold text-rose-300 group-hover:translate-x-1 transition-transform"><span>Buka Data Kerjasama</span><i class="fa-solid fa-arrow-right"></i></div>
+        </a>
 
       </div>
 
@@ -238,7 +250,7 @@
 
   <script>
     const nhostModulePromise = import('../nhost/client.js');
-    const allowedAdminPages = new Set(['absensi-history.html', 'keuangan.html', 'pembagian-gaji.html', 'staff.html']);
+    const allowedAdminPages = new Set(['absensi-history.html', 'keuangan.html', 'pembagian-gaji.html', 'staff.html', 'kerjasama.html']);
 
     function showAdminLoginError(message) {
       const errorElement = document.getElementById('adminLoginError');

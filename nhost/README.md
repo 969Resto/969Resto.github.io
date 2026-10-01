@@ -27,3 +27,7 @@ Existing browser-only shift drafts are kept visible as a local fallback, but are
 The `/admin` dashboard and admin pages share the Nhost Auth session stored by the browser. Assign admin accounts the `attendance_admin` role; opening another admin page in the same browser restores and validates that session instead of asking for credentials again. The attendance page also restores the same session for its admin controls.
 
 The `send-discord` Supabase Edge Function verifies Nhost sessions against Hasura using the `attendance_admin` role. After changing the function or its `verify_jwt` setting in `supabase/config.toml`, deploy the updated function with `supabase functions deploy send-discord` so financial summaries use the shared login in production.
+
+## Restaurant Partnerships
+
+Run `supabase/migrations/20261001_restaurant_partnerships.sql`, `supabase/migrations/20261002_restaurant_partnership_package_count.sql`, and `supabase/migrations/20261002_restaurant_partnership_package_range.sql` in the Supabase SQL editor, then deploy the updated Edge Function with `supabase functions deploy send-discord`. The function uses `SUPABASE_SERVICE_ROLE_KEY` for partnership data and sends manual reminders to the `DISCORD_CHAT_RESTO_WEBHOOK_URL` secret. Batch reminders also require the Discord role IDs in the `DISCORD_WORKER_ROLE_ID` and `DISCORD_RECRUIT_ROLE_ID` Supabase function secrets so the message can mention the correct roles. Browser access still requires an Nhost `attendance_admin` session.
