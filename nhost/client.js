@@ -54,7 +54,7 @@ export async function ensureAttendanceAdmin() {
 
   const page = window.location.pathname.split('/').pop();
   const dashboardUrl = new URL('index.html', window.location.href);
-  if (['absensi-history.html', 'keuangan.html', 'pembagian-gaji.html', 'staff.html'].includes(page)) {
+  if (['absensi-history.html', 'keuangan.html', 'pembagian-gaji.html', 'staff.html', 'kerjasama.html'].includes(page)) {
     dashboardUrl.searchParams.set('next', page);
   }
   window.location.replace(dashboardUrl.href);
