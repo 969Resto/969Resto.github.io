@@ -123,12 +123,11 @@
       </form>
       <section id="adminControls" class="hidden space-y-5">
         <div class="border-b border-amber-900/30 pb-5">
-          <label for="weekStart" class="block text-xs font-semibold text-amber-300">Pilih minggu pembukuan</label>
+          <label for="weekStart" class="block text-xs font-semibold text-amber-300">Minggu pembukuan aktif</label>
           <div class="mt-2 flex flex-wrap gap-2">
-            <input id="weekStart" type="date" class="field-dark rounded-lg px-3 py-2.5 text-sm [color-scheme:dark]">
-            <button id="applyWeek" type="button" class="rounded-lg border border-amber-500/40 px-4 py-2.5 text-xs font-semibold text-amber-200 transition hover:bg-amber-900/40"><i class="fa-solid fa-calendar-check mr-1"></i>Terapkan</button>
+            <input id="weekStart" type="date" disabled class="field-dark rounded-lg px-3 py-2.5 text-sm opacity-70 [color-scheme:dark]">
           </div>
-          <p class="mt-2 text-[11px] text-slate-500">Tanggal akan disesuaikan ke hari Senin pada minggu tersebut.</p>
+          <p class="mt-2 text-[11px] text-slate-500">Absensi hanya menyimpan minggu berjalan. Minggu lampau otomatis masuk ke Riwayat Rekap lalu dihapus dari absensi aktif.</p>
         </div>
         <div class="flex flex-col gap-3 border-b border-amber-900/30 pb-5 sm:flex-row sm:items-center sm:justify-between">
           <p id="staffSnapshotStatus" class="text-xs text-slate-400">Roster absensi mengikuti snapshot staff tersimpan.</p>
@@ -143,6 +142,7 @@
           <button id="btnExport" type="button" class="rounded-lg border border-emerald-500/40 bg-emerald-950/40 px-4 py-3 text-left text-xs font-semibold text-emerald-300 transition hover:bg-emerald-900/50"><i class="fa-solid fa-file-export mr-2"></i>Ekspor CSV</button>
           <button id="requestWeekReset" type="button" class="rounded-lg border border-rose-500/40 bg-rose-950/30 px-4 py-3 text-left text-xs font-semibold text-rose-200 transition hover:bg-rose-900/40"><i class="fa-solid fa-trash-can mr-2"></i>Reset Absensi Minggu Ini</button>
         </div>
+        <p class="text-[11px] leading-relaxed text-slate-500">Minggu yang sudah lewat otomatis disimpan di Riwayat Rekap dan dibersihkan dari absensi aktif.</p>
         <div id="resetWeekConfirmation" class="hidden rounded-lg border border-rose-500/30 bg-rose-950/30 p-4">
           <p class="text-xs leading-relaxed text-rose-100">Hapus semua absensi pada minggu <strong id="resetWeekRange"></strong>? Tindakan ini tidak dapat dibatalkan.</p>
           <div class="mt-3 flex justify-end gap-2">
@@ -197,6 +197,8 @@
     let pendingShiftDeletion = null;
     let pendingAdminAction = null;
     let onlineWeekLoadVersion = 0;
+    let lastAutoArchivedWeekStart = '';
+    let attendanceSyncInProgress = false;
 
     function localDateString(date = new Date()) {
       const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
@@ -604,14 +606,14 @@
       URL.revokeObjectURL(url);
     }
 
-    async function saveWeeklyRecap() {
+    async function saveWeeklyRecap(dates = weekDates, records = weeklyRecords, roster = staffList) {
       const recap = {
-        startDate: weekDates[0],
-        endDate: weekDates[6],
+        startDate: dates[0],
+        endDate: dates[6],
         savedAt: new Date().toISOString(),
-        staff: staffList.map(staff => {
-          const days = weekDates.map(date => {
-            const record = weeklyRecords[date]?.[staff.id] || {};
+        staff: roster.map(staff => {
+          const days = dates.map(date => {
+            const record = records[date]?.[staff.id] || {};
             return { date, shifts: getShifts(record) };
           });
           const totalMinutes = days.reduce((total, day) => total + attendanceMinutes({ shifts: day.shifts }), 0);
@@ -628,10 +630,163 @@
               on_conflict: { constraint: attendance_weekly_recaps_week_start_key, update_columns: [recap, saved_at] }
             ) { week_start }
           }
-        `, { weekStart: weekDates[0], recap }, 'attendance_admin');
-        document.getElementById('adminStatus').textContent = `Rekap ${weekDates[0]} - ${weekDates[6]} berhasil disimpan online di Nhost.`;
+        `, { weekStart: dates[0], recap }, 'attendance_admin');
+        document.getElementById('adminStatus').textContent = `Rekap ${dates[0]} - ${dates[6]} berhasil disimpan online di Nhost.`;
+        return true;
       } catch (error) {
         document.getElementById('adminStatus').textContent = `Rekap gagal disimpan: ${error.message}`;
+        return false;
+      }
+    }
+
+    async function archivePastAttendance() {
+      try {
+        const { requestAttendanceGraphql } = await nhostModulePromise;
+        const currentWeekStart = getWeekDates(localDateString())[0];
+        const allShifts = [];
+        const pageSize = 500;
+        let offset = 0;
+        while (true) {
+          const data = await requestAttendanceGraphql(`
+            query LoadPastAttendanceShifts($currentWeekStart: date!, $limit: Int!, $offset: Int!) {
+              attendance_shifts(
+                where: { duty_date: { _lt: $currentWeekStart } }
+                order_by: [{ duty_date: asc }, { check_in: asc }]
+                limit: $limit
+                offset: $offset
+              ) {
+                id staff_id staff_name staff_role duty_date check_in check_out
+              }
+            }
+          `, { currentWeekStart, limit: pageSize, offset }, 'attendance_admin');
+          const page = data.attendance_shifts || [];
+          allShifts.push(...page);
+          if (page.length < pageSize) break;
+          offset += pageSize;
+        }
+
+        for (let index = 0; index < localStorage.length; index += 1) {
+          const key = localStorage.key(index);
+          const match = key?.match(/^969-resto-attendance-draft-(\d{4}-\d{2}-\d{2})$/);
+          if (!match || match[1] >= currentWeekStart) continue;
+          const cachedRecords = readDraft(match[1]);
+          for (const [staffId, record] of Object.entries(cachedRecords)) {
+            for (const shift of getShifts(record)) {
+              if (!shift.checkIn || !shift.checkOut) continue;
+              allShifts.push({
+                id: null,
+                staff_id: staffId,
+                staff_name: staffList.find(staff => String(staff.id) === staffId)?.name || staffId,
+                staff_role: staffList.find(staff => String(staff.id) === staffId)?.role || '',
+                duty_date: match[1],
+                check_in: shift.checkIn,
+                check_out: shift.checkOut
+              });
+            }
+          }
+        }
+
+        const pendingWeeks = new Map();
+        const ensureWeek = date => {
+          const dates = getWeekDates(date);
+          if (!pendingWeeks.has(dates[0])) {
+            pendingWeeks.set(dates[0], {
+              dates,
+              records: Object.fromEntries(dates.map(day => [day, {}]))
+            });
+          }
+          return pendingWeeks.get(dates[0]);
+        };
+        const shiftSignatures = new Set();
+        for (const shift of allShifts) {
+          const signature = `${shift.staff_id}|${shift.duty_date}|${shift.check_in}|${shift.check_out}`;
+          if (shiftSignatures.has(signature)) continue;
+          shiftSignatures.add(signature);
+          const week = ensureWeek(shift.duty_date);
+          const staffId = String(shift.staff_id);
+          const record = week.records[shift.duty_date][staffId] || { shifts: [] };
+          record.shifts.push({ id: shift.id, checkIn: shift.check_in, checkOut: shift.check_out });
+          week.records[shift.duty_date][staffId] = record;
+        }
+
+        for (const [weekStartDate, week] of pendingWeeks) {
+          const archiveData = await requestAttendanceGraphql(`
+            query LoadWeeklyRecap($weekStart: date!) {
+              attendance_weekly_recaps(where: { week_start: { _eq: $weekStart } }, limit: 1) {
+                recap
+              }
+            }
+          `, { weekStart: weekStartDate }, 'attendance_admin');
+          const existingRecap = archiveData.attendance_weekly_recaps[0]?.recap;
+          const rosterById = new Map();
+          for (const staff of existingRecap?.staff || []) {
+            rosterById.set(String(staff.id), staff);
+            for (const day of staff.days || []) {
+              if (!week.records[day.date]) continue;
+              week.records[day.date][String(staff.id)] = {
+                shifts: Array.isArray(day.shifts) ? [...day.shifts] : []
+              };
+            }
+          }
+          for (const staff of staffList) {
+            if (!rosterById.has(String(staff.id))) rosterById.set(String(staff.id), staff);
+          }
+
+          for (const shift of allShifts) {
+            if (getWeekDates(shift.duty_date)[0] !== weekStartDate) continue;
+            const staffId = String(shift.staff_id);
+            if (!rosterById.has(staffId)) {
+              rosterById.set(staffId, { id: staffId, name: shift.staff_name, role: shift.staff_role });
+            }
+            const record = week.records[shift.duty_date][staffId] || { shifts: [] };
+            const signature = `${shift.check_in}|${shift.check_out}`;
+            if (!record.shifts.some(item => `${item.checkIn}|${item.checkOut}` === signature)) {
+              record.shifts.push({ id: shift.id, checkIn: shift.check_in, checkOut: shift.check_out });
+            }
+            week.records[shift.duty_date][staffId] = record;
+          }
+
+          if (!await saveWeeklyRecap(week.dates, week.records, [...rosterById.values()])) {
+            throw new Error(`Rekap minggu ${weekStartDate} gagal disimpan; absensi lama tidak dihapus.`);
+          }
+          const deletion = await requestAttendanceGraphql(`
+            mutation DeleteArchivedAttendanceWeek($startDate: date!, $endDate: date!) {
+              delete_attendance_shifts(where: { duty_date: { _gte: $startDate, _lte: $endDate } }) {
+                affected_rows
+              }
+            }
+          `, { startDate: week.dates[0], endDate: week.dates[6] }, 'attendance_admin');
+          for (const date of week.dates) localStorage.removeItem(draftStorageKey(date));
+          console.info(`Attendance week ${weekStartDate} archived; ${deletion.delete_attendance_shifts.affected_rows} old shifts removed.`);
+        }
+        document.getElementById('adminStatus').textContent = pendingWeeks.size
+          ? `${pendingWeeks.size} minggu lampau berhasil direkap dan dibersihkan dari absensi aktif.`
+          : 'Tidak ada absensi minggu lampau yang perlu diarsipkan.';
+        return true;
+      } catch (error) {
+        document.getElementById('adminStatus').textContent = `Arsip/pembersihan absensi minggu lampau gagal: ${error.message}`;
+        return false;
+      }
+    }
+
+    async function syncAttendanceWeek() {
+      if (attendanceSyncInProgress) return;
+      const today = localDateString();
+      const currentWeekStart = getWeekDates(today)[0];
+      if (currentWeekStart === weekDates[0] && (!isAdminAuthenticated || lastAutoArchivedWeekStart === currentWeekStart)) return;
+
+      attendanceSyncInProgress = true;
+      try {
+        if (isAdminAuthenticated && lastAutoArchivedWeekStart !== currentWeekStart) {
+          if (await archivePastAttendance()) lastAutoArchivedWeekStart = currentWeekStart;
+        }
+        if (currentWeekStart !== weekDates[0]) {
+          weekStart.value = currentWeekStart;
+          editingStaffIds.clear();
+          loadWeekDrafts(today);
+        }
+      } finally {
+        attendanceSyncInProgress = false;
       }
     }
 
@@ -712,6 +867,8 @@
         renderAttendance();
         weekStart.value = weekDates[0];
         document.getElementById('adminStatus').textContent = `Login admin berhasil. Periode aktif: ${weekDates[0]} - ${weekDates[6]}`;
+        await staffLoadPromise;
+        await syncAttendanceWeek();
       } catch (error) {
         status.textContent = error.message;
         status.classList.remove('hidden');
@@ -723,12 +880,6 @@
       }
     });
     document.getElementById('logoutAdmin').addEventListener('click', () => requestAdminAction('logoutAdmin'));
-    document.getElementById('applyWeek').addEventListener('click', () => {
-      if (!weekStart.value) return;
-      editingStaffIds.clear();
-      loadWeekDrafts(attendanceDate.value);
-      document.getElementById('adminStatus').textContent = `Periode aktif: ${weekDates[0]} - ${weekDates[6]}`;
-    });
     const adminActionDialog = document.getElementById('adminActionDialog');
     document.getElementById('saveWeeklyRecap').addEventListener('click', () => requestAdminAction('saveWeeklyRecap'));
     document.getElementById('refreshStaff').addEventListener('click', () => requestAdminAction('refreshStaff'));
@@ -817,13 +968,16 @@
       }
     });
     document.getElementById('btnExport').addEventListener('click', exportCsv);
-    loadStaff();
+    const staffLoadPromise = loadStaff();
+    setInterval(syncAttendanceWeek, 60 * 1000);
     (async () => {
       const { restoreAttendanceAdmin } = await nhostModulePromise;
       if (await restoreAttendanceAdmin()) {
         isAdminAuthenticated = true;
+        await staffLoadPromise;
         renderAttendance();
         document.getElementById('adminStatus').textContent = 'Sesi admin dipulihkan di perangkat ini.';
+        await syncAttendanceWeek();
       }
     })();
   </script>
