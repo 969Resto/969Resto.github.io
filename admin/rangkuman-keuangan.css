@@ -1,0 +1,21 @@
+.field-dark {
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  background: rgba(2, 6, 23, 0.8);
+  color: #f8fafc;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field-dark:focus {
+  border-color: rgba(251, 191, 36, 0.8);
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+}
+
+.field-dark:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+textarea.field-dark {
+  resize: vertical;
+}

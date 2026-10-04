@@ -192,6 +192,40 @@ function normalizeHistoryRecord(value: unknown) {
   ]);
 }
 
+function normalizeFinancialSummary(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Data rangkuman keuangan tidak valid.");
+  }
+
+  const record = value as Record<string, unknown>;
+  const reportDate = typeof record.report_date === "string" ? record.report_date : "";
+  const date = new Date(`${reportDate}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(reportDate) || Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== reportDate) {
+    throw new Error("Tanggal rangkuman tidak valid.");
+  }
+
+  const numberFields = ["total_saldo", "pembagian_gaji_nsn", "modal", "reimburse", "kerjasama_pesanan"] as const;
+  const normalized: Record<string, string | number> = { report_date: reportDate };
+  for (const field of numberFields) {
+    const amount = record[field];
+    if (typeof amount !== "number" || !Number.isFinite(amount) || amount < 0 || amount > 9999999999999999) {
+      throw new Error("Nilai keuangan harus berupa angka positif yang valid.");
+    }
+    normalized[field] = amount;
+  }
+
+  if (typeof record.notes !== "string" || record.notes.length > 2000) {
+    throw new Error("Catatan maksimal 2.000 karakter.");
+  }
+  normalized.notes = record.notes;
+  return normalized;
+}
+
+function isUuid(value: unknown): value is string {
+  return typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 function normalizePartnershipRecord(value: unknown, requirePackageRange = false) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("Data kerjasama tidak valid.");
@@ -385,6 +419,95 @@ serve(async (request) => {
       input = await request.json();
     } catch {
       return jsonResponse({ error: "Format payload tidak valid." }, 400, origin);
+    }
+
+    if (input && typeof input === "object" && (input as Record<string, unknown>).action === "list_financial_summaries") {
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (!serviceRoleKey) return jsonResponse({ error: "Konfigurasi database rangkuman keuangan belum lengkap." }, 500, origin);
+
+      const endpoint = new URL(`${supabaseUrl}/rest/v1/restaurant_financial_summaries`);
+      endpoint.searchParams.set("select", "*");
+      endpoint.searchParams.set("order", "report_date.desc");
+      endpoint.searchParams.set("limit", "1000");
+      const databaseResponse = await fetch(endpoint, {
+        headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` },
+        redirect: "error"
+      });
+      if (!databaseResponse.ok) {
+        console.error("Financial summary query failed:", await databaseResponse.text());
+        return jsonResponse({ error: "Database menolak pembacaan rangkuman keuangan." }, 502, origin);
+      }
+      const records: unknown = await databaseResponse.json();
+      if (!Array.isArray(records)) return jsonResponse({ error: "Format rangkuman keuangan dari database tidak valid." }, 502, origin);
+      return jsonResponse({ data: records }, 200, origin);
+    }
+
+    if (input && typeof input === "object" && (input as Record<string, unknown>).action === "save_financial_summary") {
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (!serviceRoleKey) return jsonResponse({ error: "Konfigurasi database rangkuman keuangan belum lengkap." }, 500, origin);
+
+      const requestData = input as Record<string, unknown>;
+      let record: ReturnType<typeof normalizeFinancialSummary>;
+      try {
+        record = normalizeFinancialSummary(requestData.record);
+      } catch (error) {
+        return jsonResponse({ error: error instanceof Error ? error.message : "Data rangkuman keuangan tidak valid." }, 400, origin);
+      }
+
+      const rawId = (requestData.record as Record<string, unknown>).id;
+      const endpoint = new URL(`${supabaseUrl}/rest/v1/restaurant_financial_summaries`);
+      let method: "POST" | "PATCH" = "POST";
+      const headers: Record<string, string> = {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal"
+      };
+      if (rawId !== undefined) {
+        if (!isUuid(rawId)) return jsonResponse({ error: "ID rangkuman keuangan tidak valid." }, 400, origin);
+        method = "PATCH";
+        endpoint.searchParams.set("id", `eq.${rawId}`);
+      }
+
+      const databaseResponse = await fetch(endpoint, {
+        method,
+        headers,
+        body: JSON.stringify(record),
+        redirect: "error"
+      });
+      if (!databaseResponse.ok) {
+        const errorDetails = await databaseResponse.text();
+        if (method === "POST" && databaseResponse.status === 409) {
+          return jsonResponse({ error: "Tanggal ini sudah memiliki rangkuman. Gunakan tombol Edit untuk mengubahnya." }, 409, origin);
+        }
+        console.error("Financial summary save failed:", errorDetails);
+        return jsonResponse({ error: "Database menolak penyimpanan rangkuman keuangan." }, 502, origin);
+      }
+      return jsonResponse({ success: true }, method === "POST" ? 201 : 200, origin);
+    }
+
+    if (input && typeof input === "object" && (input as Record<string, unknown>).action === "delete_financial_summary") {
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      if (!serviceRoleKey) return jsonResponse({ error: "Konfigurasi database rangkuman keuangan belum lengkap." }, 500, origin);
+
+      const rawId = (input as Record<string, unknown>).id;
+      if (!isUuid(rawId)) return jsonResponse({ error: "ID rangkuman keuangan tidak valid." }, 400, origin);
+      const endpoint = new URL(`${supabaseUrl}/rest/v1/restaurant_financial_summaries`);
+      endpoint.searchParams.set("id", `eq.${rawId}`);
+      const databaseResponse = await fetch(endpoint, {
+        method: "DELETE",
+        headers: {
+          apikey: serviceRoleKey,
+          Authorization: `Bearer ${serviceRoleKey}`,
+          Prefer: "return=minimal"
+        },
+        redirect: "error"
+      });
+      if (!databaseResponse.ok) {
+        console.error("Financial summary delete failed:", await databaseResponse.text());
+        return jsonResponse({ error: "Database menolak penghapusan rangkuman keuangan." }, 502, origin);
+      }
+      return jsonResponse({ success: true }, 200, origin);
     }
 
     if (input && typeof input === "object" && (input as Record<string, unknown>).action === "list_partnerships") {

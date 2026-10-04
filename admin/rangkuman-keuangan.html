@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>969 Resto - Rangkuman Keuangan</title>
+  <link rel="icon" type="image/png" href="../Invoice/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="keuangan.css" />
+  <link rel="stylesheet" href="rangkuman-keuangan.css" />
+</head>
+<body class="min-h-screen p-4 sm:p-6 md:p-8">
+  <section id="adminLoginGate" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm" aria-labelledby="adminLoginTitle">
+    <div class="portal-card w-full max-w-sm rounded-2xl p-6 shadow-2xl">
+      <div class="mb-5 flex items-center gap-3">
+        <img src="../Invoice/logo.png" alt="969 Resto" class="h-11 w-11 rounded-xl border border-amber-500/30 bg-black/40 p-1 object-contain">
+        <div>
+          <h1 id="adminLoginTitle" class="font-luxury text-lg font-bold text-amber-200">Login Admin</h1>
+          <p class="text-xs text-slate-400">Gunakan akun admin untuk membuka rangkuman keuangan.</p>
+        </div>
+      </div>
+      <form id="adminLoginForm" class="space-y-3">
+        <label class="block text-xs font-semibold text-slate-300" for="adminEmail">Email</label>
+        <input id="adminEmail" type="email" autocomplete="username" required class="w-full rounded-lg border border-amber-900/50 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-400">
+        <label class="block text-xs font-semibold text-slate-300" for="adminPassword">Password</label>
+        <input id="adminPassword" type="password" autocomplete="current-password" required class="w-full rounded-lg border border-amber-900/50 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-400">
+        <p id="adminLoginError" class="hidden text-sm text-red-300" role="alert"></p>
+        <button id="btnAdminLogin" type="submit" class="w-full rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:bg-amber-400"><i class="fa-solid fa-lock mr-1.5"></i>Masuk</button>
+      </form>
+    </div>
+  </section>
+
+  <header class="mx-auto mb-6 flex w-full max-w-7xl flex-col gap-4 border-b border-amber-900/30 pb-6 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex items-center gap-4">
+      <img src="../Invoice/logo.png" alt="969 Resto" class="h-12 w-12 rounded-xl border border-amber-500/30 bg-black/40 object-contain p-1 shadow-lg">
+      <div>
+        <h1 class="font-luxury text-xl font-bold tracking-wider text-amber-100 sm:text-2xl">969 RESTO</h1>
+        <p class="mt-1 text-xs uppercase tracking-widest text-amber-200/60">Rangkuman Keuangan Resto</p>
+      </div>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="btnRefresh" type="button" class="rounded-xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-2 text-xs font-semibold text-emerald-200 transition hover:bg-emerald-900/50"><i class="fa-solid fa-rotate mr-1"></i>Muat Ulang</button>
+      <button id="btnAdminLogout" type="button" class="hidden rounded-xl border border-rose-500/30 bg-red-950/60 px-4 py-2 text-xs font-semibold text-red-200 transition hover:bg-red-900"><i class="fa-solid fa-right-from-bracket mr-1"></i>Keluar</button>
+      <a href="index.html" class="rounded-xl border border-amber-500/30 bg-slate-900/80 px-4 py-2 text-xs font-semibold text-amber-200 transition hover:border-amber-400 hover:bg-slate-800"><i class="fa-solid fa-arrow-left mr-1"></i>Management</a>
+      <a href="../index.html" class="rounded-xl border border-slate-600 bg-slate-900/80 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:border-slate-400 hover:bg-slate-800"><i class="fa-solid fa-house mr-1"></i>Beranda</a>
+    </div>
+  </header>
+
+  <main class="mx-auto w-full max-w-7xl space-y-6">
+    <section class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">Arsip Finansial</p>
+        <h2 class="font-luxury text-2xl font-bold text-slate-100 sm:text-3xl">Rangkuman Keuangan Resto</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">Catat rangkuman per tanggal. Nilai hasil pembagian dihitung otomatis dan semua data tersimpan online di Supabase.</p>
+      </div>
+      <p id="statusMessage" class="text-xs text-slate-400" role="status" aria-live="polite">Menunggu sesi admin...</p>
+    </section>
+
+    <section class="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Ringkasan total keuangan">
+      <div class="portal-card rounded-xl p-4"><p class="text-[10px] uppercase tracking-wider text-amber-300">Jumlah Laporan</p><strong id="totalReports" class="mt-1 block text-2xl text-white">0</strong></div>
+      <div class="portal-card rounded-xl p-4"><p class="text-[10px] uppercase tracking-wider text-emerald-300">Total Income Bersih</p><strong id="totalNetIncome" class="mt-1 block text-lg text-emerald-300">$0</strong></div>
+      <div class="portal-card rounded-xl p-4"><p class="text-[10px] uppercase tracking-wider text-sky-300">Total Operasional 60%</p><strong id="totalOperations" class="mt-1 block text-lg text-sky-300">$0</strong></div>
+      <div class="portal-card rounded-xl p-4"><p class="text-[10px] uppercase tracking-wider text-amber-300">Total Owner 40%</p><strong id="totalOwner" class="mt-1 block text-lg text-amber-300">$0</strong></div>
+    </section>
+
+    <section class="portal-card rounded-2xl p-5 shadow-2xl sm:p-7">
+      <div class="mb-5 flex items-center justify-between border-b border-amber-900/30 pb-4">
+        <div>
+          <h3 id="formTitle" class="font-luxury text-lg font-bold text-slate-100">Tambah Rangkuman</h3>
+          <p class="mt-1 text-xs text-slate-400">Income ditarik = pembagian - modal; income bersih = income ditarik - reimburse.</p>
+        </div>
+        <button id="btnResetForm" type="button" class="text-xs text-slate-400 transition hover:text-amber-300"><i class="fa-solid fa-rotate-left mr-1"></i>Bersihkan</button>
+      </div>
+      <form id="summaryForm" class="space-y-5">
+        <input id="recordId" type="hidden">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <label class="text-xs font-semibold text-amber-300">Tanggal
+            <input id="reportDate" type="date" required class="field-dark mt-1 block w-full rounded-lg px-3 py-2.5 text-sm [color-scheme:dark]">
+          </label>
+          <label class="text-xs font-semibold text-amber-300">Total Saldo ($)
+            <input id="totalSaldo" type="text" inputmode="numeric" maxlength="21" required value="0" class="field-dark mt-1 block w-full rounded-lg px-3 py-2.5 text-sm">
+          </label>
+          <label class="text-xs font-semibold text-amber-300">Pembagian Gaji &amp; NSN ($)
+            <input id="pembagian" type="text" inputmode="numeric" maxlength="21" required value="0" class="field-dark mt-1 block w-full rounded-lg px-3 py-2.5 text-sm">
+          </label>
+          <label class="text-xs font-semibold text-amber-300">Modal ($)
+            <input id="modal" type="text" inputmode="numeric" maxlength="21" required value="0" class="field-dark mt-1 block w-full rounded-lg px-3 py-2.5 text-sm">
+          </label>
+          <label class="text-xs font-semibold text-amber-300">Total Reimbursement ($)
+            <input id="reimburse" type="text" inputmode="numeric" maxlength="21" required value="0" class="field-dark mt-1 block w-full rounded-lg px-3 py-2.5 text-sm">
+          </label>
+          <label class="text-xs font-semibold text-amber-300">Kerjasama &amp; Daftar Pesanan ($)
+            <input id="cooperation" type="text" inputmode="numeric" maxlength="21" required value="0" class="field-dark mt-1 block w-full rounded-lg px-3 py-2.5 text-sm">
+          </label>
+        </div>
+        <label class="block text-xs font-semibold text-amber-300">Catatan
+          <textarea id="notes" rows="2" maxlength="2000" class="field-dark mt-1 block w-full rounded-lg px-3 py-2.5 text-sm" placeholder="Catatan tambahan (opsional)"></textarea>
+        </label>
+        <div class="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3 lg:grid-cols-5">
+          <div class="rounded-lg border border-slate-700 bg-slate-950/60 p-3"><span class="block text-slate-400">Income Ditarik</span><strong id="previewDrawn" class="mt-1 block text-amber-200">$0</strong></div>
+          <div class="rounded-lg border border-slate-700 bg-slate-950/60 p-3"><span class="block text-slate-400">Income Bersih</span><strong id="previewNet" class="mt-1 block text-emerald-300">$0</strong></div>
+          <div class="rounded-lg border border-slate-700 bg-slate-950/60 p-3"><span class="block text-slate-400">Operasional 60%</span><strong id="previewOperations" class="mt-1 block text-sky-300">$0</strong></div>
+          <div class="rounded-lg border border-slate-700 bg-slate-950/60 p-3"><span class="block text-slate-400">Owner 40%</span><strong id="previewOwner" class="mt-1 block text-amber-300">$0</strong></div>
+          <div class="rounded-lg border border-slate-700 bg-slate-950/60 p-3 col-span-2 sm:col-span-1"><span class="block text-slate-400">Operasional + Kerjasama</span><strong id="previewCombined" class="mt-1 block text-emerald-200">$0</strong></div>
+        </div>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+          <button id="btnCancelEdit" type="button" class="hidden rounded-lg border border-slate-600 px-5 py-2.5 text-xs font-semibold text-slate-300 transition hover:bg-white/10">Batal Edit</button>
+          <button id="btnSave" type="submit" class="rounded-lg bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-amber-400 disabled:cursor-wait disabled:opacity-60"><i class="fa-solid fa-floppy-disk mr-1"></i>Simpan ke Supabase</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="portal-card overflow-hidden rounded-2xl shadow-2xl">
+      <div class="flex flex-col gap-2 border-b border-amber-900/30 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div><h3 class="font-luxury text-lg font-bold text-slate-100">Riwayat Rangkuman</h3><p class="mt-1 text-xs text-slate-400">Data tersimpan online di Supabase.</p></div>
+        <label class="text-xs font-semibold text-amber-300">Cari tanggal
+          <input id="filterDate" type="month" class="field-dark mt-1 rounded-lg px-3 py-2 text-sm [color-scheme:dark]">
+        </label>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[1250px] border-collapse text-left text-xs text-slate-300">
+          <thead class="bg-amber-950/30 text-[10px] uppercase tracking-wider text-amber-300">
+            <tr class="border-b border-amber-900/40">
+              <th class="px-4 py-3">Tanggal</th><th class="px-4 py-3">Total Saldo</th><th class="px-4 py-3">Pembagian Gaji &amp; NSN</th><th class="px-4 py-3">Modal</th><th class="px-4 py-3">Income Ditarik</th><th class="px-4 py-3">Reimbursement</th><th class="px-4 py-3">Income Bersih</th><th class="px-4 py-3">Operasional 60%</th><th class="px-4 py-3">Owner 40%</th><th class="px-4 py-3">Kerjasama &amp; Pesanan</th><th class="px-4 py-3">Operasional + Kerjasama</th><th class="px-4 py-3">Catatan</th><th class="px-4 py-3">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody" class="divide-y divide-amber-900/20">
+            <tr><td colspan="13" class="px-4 py-10 text-center text-slate-400">Memuat data Supabase...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="mx-auto mt-8 w-full max-w-7xl border-t border-amber-900/30 py-6 text-center text-xs text-slate-500"><p>&copy; 2026 <strong>969 Resto</strong> &bull; Internal Management System</p></footer>
+
+  <script>
+    const SUPABASE_URL = 'https://rdnhbqufxidbdwmxxabf.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_e1eww7RhRX3_l95kwvyM4Q_LysMicKv';
+    const FINANCE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/send-discord`;
+    const nhostModulePromise = import('../nhost/client.js');
+    const inputIds = ['totalSaldo', 'pembagian', 'modal', 'reimburse', 'cooperation'];
+    let adminSession = null;
+    let historyData = [];
+
+    function formatMoney(value) {
+      return '$' + (Number(value) || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
+    }
+
+    function parseAmount(id) {
+      return Number(document.getElementById(id).value.replace(/\D/g, '')) || 0;
+    }
+
+    function formatAmountInput(event) {
+      const input = event.target;
+      const selectionStart = input.selectionStart ?? input.value.length;
+      const digitsBeforeCursor = input.value.slice(0, selectionStart).replace(/\D/g, '').replace(/^0+(?=\d)/, '').length;
+      const digits = input.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+      const formatted = digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      input.value = formatted;
+
+      let cursor = 0;
+      let digitsSeen = 0;
+      while (cursor < formatted.length && digitsSeen < digitsBeforeCursor) {
+        if (/\d/.test(formatted[cursor])) digitsSeen += 1;
+        cursor += 1;
+      }
+      input.setSelectionRange(cursor, cursor);
+      updatePreview();
+    }
+
+    function readFormRecord() {
+      return {
+        report_date: document.getElementById('reportDate').value,
+        total_saldo: parseAmount('totalSaldo'),
+        pembagian_gaji_nsn: parseAmount('pembagian'),
+        modal: parseAmount('modal'),
+        reimburse: parseAmount('reimburse'),
+        kerjasama_pesanan: parseAmount('cooperation'),
+        notes: document.getElementById('notes').value
+      };
+    }
+
+    function calculate(record) {
+      const drawn = Math.max(0, record.pembagian_gaji_nsn - record.modal);
+      const net = Math.max(0, drawn - record.reimburse);
+      const operations = net * 0.6;
+      return { drawn, net, operations, owner: net * 0.4, combined: operations + record.kerjasama_pesanan };
+    }
+
+    function updatePreview() {
+      const totals = calculate(readFormRecord());
+      document.getElementById('previewDrawn').textContent = formatMoney(totals.drawn);
+      document.getElementById('previewNet').textContent = formatMoney(totals.net);
+      document.getElementById('previewOperations').textContent = formatMoney(totals.operations);
+      document.getElementById('previewOwner').textContent = formatMoney(totals.owner);
+      document.getElementById('previewCombined').textContent = formatMoney(totals.combined);
+    }
+
+    function setStatus(message, isError = false) {
+      const status = document.getElementById('statusMessage');
+      status.textContent = message;
+      status.className = `text-xs ${isError ? 'text-rose-300' : 'text-slate-400'}`;
+    }
+
+    async function requestFinance(action, values = {}) {
+      if (!adminSession?.accessToken) throw new Error('Sesi admin berakhir. Silakan masuk kembali.');
+      const response = await fetch(FINANCE_FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${adminSession.accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action, ...values })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Permintaan gagal (status ${response.status}).`);
+      return result;
+    }
+
+    function renderSummary() {
+      const month = document.getElementById('filterDate').value;
+      const rows = month ? historyData.filter(item => item.report_date.startsWith(month)) : historyData;
+      const sum = (key) => rows.reduce((total, item) => total + (Number(item[key]) || 0), 0);
+      document.getElementById('totalReports').textContent = rows.length;
+      document.getElementById('totalNetIncome').textContent = formatMoney(sum('income_bersih'));
+      document.getElementById('totalOperations').textContent = formatMoney(sum('operasional_60'));
+      document.getElementById('totalOwner').textContent = formatMoney(sum('owner_40'));
+      document.getElementById('historyBody').innerHTML = rows.length ? rows.map(item => `
+        <tr class="hover:bg-amber-950/20">
+          <td class="whitespace-nowrap px-4 py-3 font-semibold text-white">${escapeHtml(formatDate(item.report_date))}</td>
+          <td class="whitespace-nowrap px-4 py-3">${formatMoney(item.total_saldo)}</td>
+          <td class="whitespace-nowrap px-4 py-3">${formatMoney(item.pembagian_gaji_nsn)}</td>
+          <td class="whitespace-nowrap px-4 py-3">${formatMoney(item.modal)}</td>
+          <td class="whitespace-nowrap px-4 py-3 text-amber-200">${formatMoney(item.income_ditarik)}</td>
+          <td class="whitespace-nowrap px-4 py-3">${formatMoney(item.reimburse)}</td>
+          <td class="whitespace-nowrap px-4 py-3 font-semibold text-emerald-300">${formatMoney(item.income_bersih)}</td>
+          <td class="whitespace-nowrap px-4 py-3 text-sky-300">${formatMoney(item.operasional_60)}</td>
+          <td class="whitespace-nowrap px-4 py-3 text-amber-300">${formatMoney(item.owner_40)}</td>
+          <td class="whitespace-nowrap px-4 py-3">${formatMoney(item.kerjasama_pesanan)}</td>
+          <td class="whitespace-nowrap px-4 py-3 text-emerald-200">${formatMoney(item.operasional_plus_kerjasama)}</td>
+          <td class="max-w-48 px-4 py-3">${escapeHtml(item.notes || '-')}</td>
+          <td class="whitespace-nowrap px-4 py-3">
+            <button type="button" data-edit-id="${escapeHtml(item.id)}" class="mr-2 text-sky-300 hover:text-sky-200" aria-label="Edit rangkuman ${escapeHtml(item.report_date)}"><i class="fa-solid fa-pen"></i></button>
+            <button type="button" data-delete-id="${escapeHtml(item.id)}" class="text-rose-300 hover:text-rose-200" aria-label="Hapus rangkuman ${escapeHtml(item.report_date)}"><i class="fa-solid fa-trash-can"></i></button>
+          </td>
+        </tr>
+      `).join('') : '<tr><td colspan="13" class="px-4 py-10 text-center text-slate-400">Belum ada rangkuman untuk periode ini.</td></tr>';
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[character]);
+    }
+
+    function formatDate(value) {
+      const [year, month, day] = value.split('-').map(Number);
+      return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(year, month - 1, day));
+    }
+
+    function resetForm() {
+      document.getElementById('summaryForm').reset();
+      document.getElementById('recordId').value = '';
+      const today = new Date();
+      today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+      document.getElementById('reportDate').disabled = false;
+      document.getElementById('reportDate').value = today.toISOString().slice(0, 10);
+      for (const id of inputIds) document.getElementById(id).value = '0';
+      document.getElementById('formTitle').textContent = 'Tambah Rangkuman';
+      document.getElementById('btnSave').innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i>Simpan ke Supabase';
+      document.getElementById('btnCancelEdit').classList.add('hidden');
+      updatePreview();
+    }
+
+    function editRecord(id) {
+      const item = historyData.find(record => record.id === id);
+      if (!item) return;
+      document.getElementById('recordId').value = item.id;
+      document.getElementById('reportDate').value = item.report_date;
+      document.getElementById('reportDate').disabled = true;
+      document.getElementById('totalSaldo').value = Number(item.total_saldo).toLocaleString('id-ID');
+      document.getElementById('pembagian').value = Number(item.pembagian_gaji_nsn).toLocaleString('id-ID');
+      document.getElementById('modal').value = Number(item.modal).toLocaleString('id-ID');
+      document.getElementById('reimburse').value = Number(item.reimburse).toLocaleString('id-ID');
+      document.getElementById('cooperation').value = Number(item.kerjasama_pesanan).toLocaleString('id-ID');
+      document.getElementById('notes').value = item.notes || '';
+      document.getElementById('formTitle').textContent = `Edit Rangkuman ${formatDate(item.report_date)}`;
+      document.getElementById('btnSave').innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i>Simpan Perubahan';
+      document.getElementById('btnCancelEdit').classList.remove('hidden');
+      updatePreview();
+      document.getElementById('summaryForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function loadHistory() {
+      setStatus('Memuat rangkuman dari Supabase...');
+      const result = await requestFinance('list_financial_summaries');
+      if (!Array.isArray(result.data)) throw new Error('Format data rangkuman keuangan dari server tidak valid.');
+      historyData = result.data;
+      renderSummary();
+      setStatus(`${historyData.length} rangkuman dimuat dari Supabase.`);
+    }
+
+    async function activateAdminSession(session) {
+      adminSession = session;
+      document.body.classList.add('admin-authenticated');
+      document.getElementById('adminLoginGate').classList.add('hidden');
+      document.getElementById('btnAdminLogout').classList.remove('hidden');
+      document.getElementById('adminLoginError').classList.add('hidden');
+      resetForm();
+      await loadHistory();
+    }
+
+    inputIds.forEach(id => document.getElementById(id).addEventListener('input', formatAmountInput));
+    document.getElementById('summaryForm').addEventListener('input', updatePreview);
+    document.getElementById('summaryForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      const button = document.getElementById('btnSave');
+      const record = { ...readFormRecord(), id: document.getElementById('recordId').value || undefined };
+      button.disabled = true;
+      setStatus('Menyimpan rangkuman...');
+      try {
+        await requestFinance('save_financial_summary', { record });
+        resetForm();
+        await loadHistory();
+        setStatus('Rangkuman berhasil disimpan online di Supabase.');
+      } catch (error) {
+        setStatus(error.message, true);
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.getElementById('historyBody').addEventListener('click', async event => {
+      const editButton = event.target.closest('[data-edit-id]');
+      if (editButton) {
+        editRecord(editButton.dataset.editId);
+        return;
+      }
+      const deleteButton = event.target.closest('[data-delete-id]');
+      if (!deleteButton || !window.confirm('Hapus rangkuman keuangan ini? Tindakan ini tidak dapat dibatalkan.')) return;
+      try {
+        await requestFinance('delete_financial_summary', { id: deleteButton.dataset.deleteId });
+        await loadHistory();
+        setStatus('Rangkuman berhasil dihapus.');
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    });
+
+    document.getElementById('btnResetForm').addEventListener('click', resetForm);
+    document.getElementById('btnCancelEdit').addEventListener('click', resetForm);
+    document.getElementById('filterDate').addEventListener('change', renderSummary);
+    document.getElementById('btnRefresh').addEventListener('click', async () => {
+      try {
+        await loadHistory();
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    });
+
+    document.getElementById('adminLoginForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      const button = document.getElementById('btnAdminLogin');
+      const errorElement = document.getElementById('adminLoginError');
+      button.disabled = true;
+      errorElement.classList.add('hidden');
+      try {
+        const { signInAttendanceAdmin, getAttendanceSession } = await nhostModulePromise;
+        await signInAttendanceAdmin(document.getElementById('adminEmail').value.trim(), document.getElementById('adminPassword').value);
+        await activateAdminSession(await getAttendanceSession());
+      } catch (error) {
+        errorElement.textContent = error.message;
+        errorElement.classList.remove('hidden');
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.getElementById('btnAdminLogout').addEventListener('click', async () => {
+      try {
+        const { signOutAttendanceAdmin } = await nhostModulePromise;
+        await signOutAttendanceAdmin();
+        adminSession = null;
+        document.body.classList.remove('admin-authenticated');
+        document.getElementById('adminLoginGate').classList.remove('hidden');
+        document.getElementById('btnAdminLogout').classList.add('hidden');
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    });
+
+    (async () => {
+      try {
+        const { restoreAttendanceAdmin, getAttendanceSession } = await nhostModulePromise;
+        if (await restoreAttendanceAdmin()) await activateAdminSession(await getAttendanceSession());
+        else setStatus('Masuk dengan akun admin untuk membuka data.');
+      } catch (error) {
+        setStatus(`Gagal memulihkan sesi admin: ${error.message}`, true);
+      }
+    })();
+  </script>
+</body>
+</html>
