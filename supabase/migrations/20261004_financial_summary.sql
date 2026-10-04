@@ -7,14 +7,49 @@ create table if not exists public.restaurant_financial_summaries (
   reimburse numeric(18, 2) not null default 0 check (reimburse >= 0),
   kerjasama_pesanan numeric(18, 2) not null default 0 check (kerjasama_pesanan >= 0),
   notes text not null default '' check (char_length(notes) <= 2000),
-  income_ditarik numeric(18, 2) generated always as (greatest(0, pembagian_gaji_nsn - modal)) stored,
-  income_bersih numeric(18, 2) generated always as (greatest(0, pembagian_gaji_nsn - modal - reimburse)) stored,
-  operasional_60 numeric(18, 2) generated always as (greatest(0, pembagian_gaji_nsn - modal - reimburse) * 0.60) stored,
-  owner_40 numeric(18, 2) generated always as (greatest(0, pembagian_gaji_nsn - modal - reimburse) * 0.40) stored,
-  operasional_plus_kerjasama numeric(18, 2) generated always as (greatest(0, pembagian_gaji_nsn - modal - reimburse) * 0.60 + kerjasama_pesanan) stored,
+  income_ditarik numeric(18, 2) not null default 0 check (income_ditarik >= 0),
+  income_bersih numeric(18, 2) not null default 0 check (income_bersih >= 0),
+  operasional_60 numeric(18, 2) not null default 0 check (operasional_60 >= 0),
+  owner_40 numeric(18, 2) not null default 0 check (owner_40 >= 0),
+  operasional_plus_kerjasama numeric(18, 2) not null default 0 check (operasional_plus_kerjasama >= 0),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+do $$
+declare
+  column_name text;
+begin
+  foreach column_name in array array[
+    'income_ditarik',
+    'income_bersih',
+    'operasional_60',
+    'owner_40',
+    'operasional_plus_kerjasama'
+  ] loop
+    if exists (
+      select 1
+      from pg_attribute
+      where attrelid = 'public.restaurant_financial_summaries'::regclass
+        and attname = column_name
+        and attgenerated = 's'
+    ) then
+      execute format(
+        'alter table public.restaurant_financial_summaries alter column %I drop expression',
+        column_name
+      );
+    end if;
+    execute format(
+      'alter table public.restaurant_financial_summaries alter column %I set default 0',
+      column_name
+    );
+    execute format(
+      'alter table public.restaurant_financial_summaries alter column %I set not null',
+      column_name
+    );
+  end loop;
+end;
+$$;
 
 create or replace function public.touch_restaurant_financial_summary_updated_at()
 returns trigger

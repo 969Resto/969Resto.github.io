@@ -146,6 +146,7 @@
     const inputIds = ['totalSaldo', 'pembagian', 'modal', 'reimburse', 'cooperation'];
     let adminSession = null;
     let historyData = [];
+    let preservedDerivedValues = null;
 
     function formatMoney(value) {
       return '$' + (Number(value) || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
@@ -157,6 +158,7 @@
 
     function formatAmountInput(event) {
       const input = event.target;
+      preservedDerivedValues = null;
       const selectionStart = input.selectionStart ?? input.value.length;
       const digitsBeforeCursor = input.value.slice(0, selectionStart).replace(/\D/g, '').replace(/^0+(?=\d)/, '').length;
       const digits = input.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
@@ -174,7 +176,7 @@
     }
 
     function readFormRecord() {
-      return {
+      const record = {
         report_date: document.getElementById('reportDate').value,
         total_saldo: parseAmount('totalSaldo'),
         pembagian_gaji_nsn: parseAmount('pembagian'),
@@ -183,22 +185,30 @@
         kerjasama_pesanan: parseAmount('cooperation'),
         notes: document.getElementById('notes').value
       };
+      return { ...record, ...(preservedDerivedValues || calculate(record)) };
     }
 
     function calculate(record) {
       const drawn = Math.max(0, record.pembagian_gaji_nsn - record.modal);
       const net = Math.max(0, drawn - record.reimburse);
       const operations = net * 0.6;
-      return { drawn, net, operations, owner: net * 0.4, combined: operations + record.kerjasama_pesanan };
+      return {
+        income_ditarik: drawn,
+        income_bersih: net,
+        operasional_60: operations,
+        owner_40: net * 0.4,
+        operasional_plus_kerjasama: operations + record.kerjasama_pesanan
+      };
     }
 
     function updatePreview() {
       const totals = calculate(readFormRecord());
-      document.getElementById('previewDrawn').textContent = formatMoney(totals.drawn);
-      document.getElementById('previewNet').textContent = formatMoney(totals.net);
-      document.getElementById('previewOperations').textContent = formatMoney(totals.operations);
-      document.getElementById('previewOwner').textContent = formatMoney(totals.owner);
-      document.getElementById('previewCombined').textContent = formatMoney(totals.combined);
+      const displayedTotals = preservedDerivedValues || totals;
+      document.getElementById('previewDrawn').textContent = formatMoney(displayedTotals.income_ditarik);
+      document.getElementById('previewNet').textContent = formatMoney(displayedTotals.income_bersih);
+      document.getElementById('previewOperations').textContent = formatMoney(displayedTotals.operasional_60);
+      document.getElementById('previewOwner').textContent = formatMoney(displayedTotals.owner_40);
+      document.getElementById('previewCombined').textContent = formatMoney(displayedTotals.operasional_plus_kerjasama);
     }
 
     function setStatus(message, isError = false) {
@@ -267,6 +277,7 @@
     function resetForm() {
       document.getElementById('summaryForm').reset();
       document.getElementById('recordId').value = '';
+      preservedDerivedValues = null;
       const today = new Date();
       today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
       document.getElementById('reportDate').disabled = false;
@@ -290,6 +301,13 @@
       document.getElementById('reimburse').value = Number(item.reimburse).toLocaleString('id-ID');
       document.getElementById('cooperation').value = Number(item.kerjasama_pesanan).toLocaleString('id-ID');
       document.getElementById('notes').value = item.notes || '';
+      preservedDerivedValues = {
+        income_ditarik: Number(item.income_ditarik),
+        income_bersih: Number(item.income_bersih),
+        operasional_60: Number(item.operasional_60),
+        owner_40: Number(item.owner_40),
+        operasional_plus_kerjasama: Number(item.operasional_plus_kerjasama)
+      };
       document.getElementById('formTitle').textContent = `Edit Rangkuman ${formatDate(item.report_date)}`;
       document.getElementById('btnSave').innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i>Simpan Perubahan';
       document.getElementById('btnCancelEdit').classList.remove('hidden');

@@ -204,7 +204,18 @@ function normalizeFinancialSummary(value: unknown) {
     throw new Error("Tanggal rangkuman tidak valid.");
   }
 
-  const numberFields = ["total_saldo", "pembagian_gaji_nsn", "modal", "reimburse", "kerjasama_pesanan"] as const;
+  const numberFields = [
+    "total_saldo",
+    "pembagian_gaji_nsn",
+    "modal",
+    "reimburse",
+    "kerjasama_pesanan",
+    "income_ditarik",
+    "income_bersih",
+    "operasional_60",
+    "owner_40",
+    "operasional_plus_kerjasama"
+  ] as const;
   const normalized: Record<string, string | number> = { report_date: reportDate };
   for (const field of numberFields) {
     const amount = record[field];
