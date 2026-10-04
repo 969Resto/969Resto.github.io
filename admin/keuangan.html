@@ -94,6 +94,12 @@
             <div>
               <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1.5">Periode / Tanggal</label>
               <input type="text" id="periode" placeholder="Tulis periode atau tanggal" class="w-full bg-slate-950/80 border border-amber-900/40 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none transition">
+              <label for="financialReportDate" class="mt-3 block text-[11px] font-bold text-cyan-300">Tanggal Data Keuangan</label>
+              <div class="mt-1 flex gap-2">
+                <input type="date" id="financialReportDate" class="min-w-0 flex-1 rounded-xl border border-cyan-500/30 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 [color-scheme:dark]">
+                <button type="button" id="btnLoadFinancialReport" class="rounded-xl border border-cyan-500/40 bg-cyan-950/30 px-3 py-2 text-[11px] font-bold text-cyan-200 transition hover:bg-cyan-900/50 disabled:cursor-wait disabled:opacity-60"><i class="fa-solid fa-download mr-1"></i>Ambil</button>
+              </div>
+              <p id="financialReportStatus" class="mt-1 text-[10px] text-slate-400" role="status" aria-live="polite"></p>
               <label class="mt-3 block text-xs font-bold text-emerald-300 uppercase tracking-wider mb-1.5">Saldo Pembagian (Manual)</label>
               <input type="text" inputmode="numeric" id="saldoPembagian" placeholder="Tulis saldo pembagian" class="w-full bg-emerald-950/30 border border-emerald-500/30 focus:border-emerald-400 rounded-xl px-3.5 py-2.5 text-sm text-emerald-200 placeholder-slate-600 focus:outline-none">
               <p class="mt-1.5 text-[11px] leading-relaxed text-slate-500">Diisi manual dan tidak mengikuti Saldo Mingguan.</p>
@@ -416,6 +422,44 @@
       return result;
     }
 
+    async function loadFinancialReportIntoForm() {
+      const date = document.getElementById('financialReportDate').value;
+      const button = document.getElementById('btnLoadFinancialReport');
+      const status = document.getElementById('financialReportStatus');
+      if (!date) {
+        status.textContent = 'Pilih tanggal Data Keuangan terlebih dahulu.';
+        status.className = 'mt-1 text-[10px] text-rose-300';
+        return;
+      }
+      button.disabled = true;
+      status.textContent = 'Mengambil data dari Data Keuangan...';
+      status.className = 'mt-1 text-[10px] text-slate-400';
+      try {
+        const result = await sendDiscordMessage({ action: 'list_financial_summaries' });
+        if (!Array.isArray(result.data)) throw new Error('Format data keuangan dari server tidak valid.');
+        const record = result.data.find(item => item.report_date === date);
+        if (!record) {
+          status.textContent = `Tidak ada Data Keuangan untuk ${date}.`;
+          status.className = 'mt-1 text-[10px] text-amber-300';
+          return;
+        }
+        document.getElementById('periode').value = formatDate(record.report_date);
+        document.getElementById('saldoMingguan').value = Number(record.total_saldo || 0).toLocaleString('id-ID');
+        document.getElementById('saldoPembagian').value = Number(record.pembagian_gaji_nsn || 0).toLocaleString('id-ID');
+        document.getElementById('modalDisimpan').value = Number(record.modal || 0).toLocaleString('id-ID');
+        document.getElementById('reimburse').value = Number(record.reimburse || 0).toLocaleString('id-ID');
+        document.getElementById('kerjasama').value = Number(record.kerjasama_pesanan || 0).toLocaleString('id-ID');
+        updateLivePreview();
+        status.textContent = `Data untuk ${formatDate(record.report_date)} berhasil dimuat.`;
+        status.className = 'mt-1 text-[10px] text-emerald-300';
+      } catch (error) {
+        status.textContent = error.message || 'Gagal mengambil Data Keuangan.';
+        status.className = 'mt-1 text-[10px] text-rose-300';
+      } finally {
+        button.disabled = false;
+      }
+    }
+
     function calculateValues() {
       const periode = document.getElementById('periode').value || '-';
       const saldo = parseAmount('saldoMingguan');
@@ -498,6 +542,7 @@ Catatan tambahan: ${catatan}`;
     ['saldoMingguan', 'saldoPembagian', 'modalDisimpan', 'reimburse', 'totalDitarik', 'kerjasama'].forEach(id => {
       document.getElementById(id).addEventListener('input', formatAmountInput);
     });
+    document.getElementById('btnLoadFinancialReport').addEventListener('click', loadFinancialReportIntoForm);
 
     // Tombol Salin
     document.getElementById('btnCopy').addEventListener('click', () => {
