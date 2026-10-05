@@ -9,7 +9,7 @@ The attendance page uses Nhost for shift rows and weekly recap archives. Browser
 
 1. Create an Nhost project and choose its region.
 2. Open the project's SQL editor and run `migrations/20260927_attendance.sql`.
-3. In Hasura permissions, allow `public` to select, insert, and delete `attendance_shifts` so attendance and shift deletion remain open without login. Public delete permission lets any visitor delete any staff member's shift; it does not verify shift ownership. Do not allow public update.
+3. In the Hasura Console, open **Data > attendance_shifts > Permissions**, add the `public` role if needed, and enable its **Delete** permission (row filter `{}`). The page also needs `public` select and insert permissions. Save the permissions and reload the attendance page. Public delete permission lets any visitor delete any staff member's shift; it does not verify shift ownership. Do not allow public update. Changing application code or running the SQL migration does not grant this Hasura permission.
 4. Grant `attendance_admin` full permissions on both tables. Grant no permissions for `public`, `user`, `anonymous`, or `me` on `attendance_weekly_recaps`.
 5. Assign `attendance_admin` as an allowed role for the three administrator accounts. Keep their default role as `user`.
 6. Keep the Nhost admin secret on a trusted server or function. Never put it in `absensi.html`, a public environment file, or GitHub Pages.

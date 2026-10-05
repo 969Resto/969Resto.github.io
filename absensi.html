@@ -442,7 +442,11 @@
             }
           `, { id: shift.id }, 'public');
         } catch (error) {
-          saveNotice.textContent = `Shift gagal dihapus: ${error.message}`;
+          const missingPublicDeletePermission = error.message.includes('delete_attendance_shifts_by_pk')
+            && error.message.includes('not found');
+          saveNotice.textContent = missingPublicDeletePermission
+            ? 'Gagal menghapus: role public belum memiliki izin Delete di Hasura Nhost. Aktifkan izin tersebut pada tabel attendance_shifts, lalu coba lagi.'
+            : `Shift gagal dihapus: ${error.message}`;
           saveNotice.className = 'text-xs text-rose-300';
           return;
         }
