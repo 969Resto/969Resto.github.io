@@ -91,6 +91,33 @@
     <footer class="mx-auto w-full max-w-7xl border-t border-amber-900/30 py-6 text-center text-xs text-slate-500"><p>&copy; 2026 <strong>969 Resto</strong> &bull; Internal Management System</p></footer>
   </div>
 
+  <dialog id="weeklyStaffDetailsDialog" class="weekly-details-dialog" aria-labelledby="weeklyStaffDetailsTitle">
+    <div class="weekly-details-shell">
+      <div class="weekly-details-header">
+        <div class="flex min-w-0 items-start gap-3">
+          <span class="weekly-details-icon"><i class="fa-solid fa-calendar-week"></i></span>
+          <div class="min-w-0">
+            <p id="weeklyStaffDetailsPeriod" class="weekly-details-eyebrow"></p>
+            <h3 id="weeklyStaffDetailsTitle" class="mt-1 truncate font-luxury text-lg font-bold text-amber-50">Rincian Mingguan</h3>
+            <p id="weeklyStaffDetailsRole" class="mt-1 text-xs text-slate-400"></p>
+          </div>
+        </div>
+        <button id="closeWeeklyStaffDetails" type="button" class="weekly-details-close" aria-label="Tutup rincian mingguan"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="weekly-details-metrics">
+        <div class="weekly-details-metric"><span class="text-cyan-300"><i class="fa-solid fa-layer-group"></i></span><div><p>Total Shift</p><strong id="weeklyStaffShiftCount">0</strong></div></div>
+        <div class="weekly-details-metric"><span class="text-emerald-300"><i class="fa-regular fa-clock"></i></span><div><p>Total Jam</p><strong id="weeklyStaffDuration">0:00</strong></div></div>
+      </div>
+      <div class="weekly-details-section-label"><span>AKTIVITAS HARIAN</span><i></i></div>
+      <div id="weeklyStaffDays" class="weekly-details-days"></div>
+      <section class="weekly-note-panel" aria-labelledby="weeklyStaffNoteLabel">
+        <div class="weekly-note-heading"><span class="weekly-note-icon"><i class="fa-regular fa-note-sticky"></i></span><div><h4 id="weeklyStaffNoteLabel">Catatan Staff</h4><p>Catatan tersimpan pada arsip periode ini.</p></div></div>
+        <textarea id="weeklyStaffNote" maxlength="1000" rows="3" class="weekly-note-input" placeholder="Tulis catatan untuk staff ini..."></textarea>
+        <div class="weekly-note-footer"><span id="weeklyStaffNoteStatus" role="status" aria-live="polite">Catatan tersimpan online</span><div><span id="weeklyStaffNoteCount">0/1000</span><button id="saveWeeklyStaffNote" type="button" class="weekly-note-save"><i class="fa-solid fa-cloud-arrow-up"></i>Simpan Catatan</button></div></div>
+      </section>
+    </div>
+  </dialog>
+
   <dialog id="logoutHistoryDialog" class="w-full max-w-md rounded-xl border border-amber-500/30 bg-slate-950 p-0 text-slate-100 shadow-2xl backdrop:bg-black/75 backdrop:backdrop-blur-sm" aria-labelledby="logoutHistoryTitle" aria-describedby="logoutHistoryMessage">
     <div class="p-5 sm:p-6">
       <div class="flex items-start gap-3">
@@ -128,8 +155,10 @@
     const archiveBody = document.getElementById('archiveBody');
     const archiveSelect = document.getElementById('archiveSelect');
     const deleteArchiveDialog = document.getElementById('deleteArchiveDialog');
+    const weeklyStaffDetailsDialog = document.getElementById('weeklyStaffDetailsDialog');
     let archives = [];
     let pendingArchiveWeek = null;
+    let selectedWeeklyStaffIndex = null;
 
     function escapeHtml(value) {
       return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
@@ -154,6 +183,85 @@
 
     function formatTime(timestamp) {
       return new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(timestamp));
+    }
+
+    function renderWeeklyStaffDetails(staffIndex) {
+      const archive = archives[Number(archiveSelect.value)];
+      const staff = archive?.staff?.[staffIndex];
+      if (!archive || !staff) return;
+      const days = Array.isArray(staff.days) ? staff.days : [];
+      const shiftCount = days.reduce((total, day) => total + (day.shifts || []).length, 0);
+      document.getElementById('weeklyStaffDetailsPeriod').textContent = `${formatDate(archive.startDate)} - ${formatDate(archive.endDate)}`;
+      document.getElementById('weeklyStaffDetailsTitle').textContent = staff.name;
+      document.getElementById('weeklyStaffDetailsRole').textContent = staff.role;
+      document.getElementById('weeklyStaffShiftCount').textContent = shiftCount;
+      document.getElementById('weeklyStaffDuration').textContent = formatDuration(staff.totalMinutes);
+      const noteInput = document.getElementById('weeklyStaffNote');
+      noteInput.value = staff.note || '';
+      document.getElementById('weeklyStaffNoteCount').textContent = `${noteInput.value.length}/1000`;
+      document.getElementById('weeklyStaffNoteStatus').textContent = staff.note ? 'Catatan tersimpan online' : 'Belum ada catatan';
+      document.getElementById('weeklyStaffNoteStatus').className = 'is-saved';
+      document.getElementById('saveWeeklyStaffNote').disabled = false;
+      selectedWeeklyStaffIndex = Number(staffIndex);
+      const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      document.getElementById('weeklyStaffDays').innerHTML = days.length ? days.map((day, dayIndex) => {
+        const shifts = Array.isArray(day.shifts) ? day.shifts : [];
+        const dayName = dayNames[new Date(`${day.date}T00:00:00`).getDay()];
+        const shiftList = shifts.length
+          ? shifts.map((shift, shiftIndex) => `<div class="weekly-shift-line"><span class="weekly-shift-number">${String(shiftIndex + 1).padStart(2, '0')}</span><span class="weekly-shift-time">${formatTime(shift.checkIn)}<i class="fa-solid fa-arrow-right"></i>${formatTime(shift.checkOut)}</span><strong>${formatDuration(durationOf([shift]))}</strong></div>`).join('')
+          : '<p class="weekly-no-shift"><i class="fa-regular fa-moon"></i>Tidak ada shift</p>';
+        return `<article class="weekly-day-card${shifts.length ? ' has-shifts' : ''}"><div class="weekly-day-header"><span class="weekly-day-icon"><i class="fa-regular fa-calendar"></i></span><div class="weekly-day-name"><strong>${dayName}</strong><span>${formatDate(day.date)}</span></div><span class="weekly-day-duration">${formatDuration(durationOf(shifts))}</span></div>${shifts.length ? `<div class="weekly-day-shifts">${shiftList}</div>` : ''}</article>`;
+      }).join('') : '<div class="weekly-no-days">Rincian harian tidak tersedia untuk periode ini.</div>';
+      if (!weeklyStaffDetailsDialog.open) weeklyStaffDetailsDialog.showModal();
+    }
+
+    async function saveWeeklyStaffNote() {
+      const archiveIndex = Number(archiveSelect.value);
+      const archive = archives[archiveIndex];
+      const staff = archive?.staff?.[selectedWeeklyStaffIndex];
+      if (!archive || !staff) return;
+      const noteInput = document.getElementById('weeklyStaffNote');
+      const saveButton = document.getElementById('saveWeeklyStaffNote');
+      const status = document.getElementById('weeklyStaffNoteStatus');
+      const note = noteInput.value.trim();
+      const updatedArchive = {
+        ...archive,
+        staff: archive.staff.map((item, index) => index === selectedWeeklyStaffIndex ? { ...item, note } : item)
+      };
+      const savedAt = new Date().toISOString();
+      saveButton.disabled = true;
+      status.className = 'is-saving';
+      status.textContent = 'Menyimpan catatan ke Nhost...';
+      try {
+        const { requestAttendanceGraphql } = await nhostModulePromise;
+        const data = await requestAttendanceGraphql(`
+          mutation SaveWeeklyRecapNote($weekStart: date!, $recap: jsonb!, $savedAt: timestamptz!) {
+            insert_attendance_weekly_recaps_one(
+              object: { week_start: $weekStart, recap: $recap, saved_at: $savedAt }
+              on_conflict: { constraint: attendance_weekly_recaps_week_start_key, update_columns: [recap, saved_at] }
+            ) {
+              week_start
+            }
+          }
+        `, {
+          weekStart: archive.startDate,
+          recap: updatedArchive,
+          savedAt
+        }, 'attendance_admin');
+        if (!data.insert_attendance_weekly_recaps_one) {
+          throw new Error('Rekap tidak ditemukan atau catatan tidak tersimpan.');
+        }
+        archives[archiveIndex] = { ...updatedArchive, savedAt };
+        renderArchive(archives[archiveIndex]);
+        document.getElementById('savedAt').textContent = `Disimpan ${new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(archives[archiveIndex].savedAt))}`;
+        status.className = 'is-saved';
+        status.textContent = 'Catatan berhasil disimpan online';
+      } catch (error) {
+        status.className = 'is-error';
+        status.textContent = `Gagal menyimpan: ${error.message}`;
+      } finally {
+        saveButton.disabled = false;
+      }
     }
 
     async function loadArchives() {
@@ -203,17 +311,14 @@
       document.getElementById('archiveShifts').textContent = totalShifts;
       document.getElementById('archiveStaff').textContent = archive.staff.length;
       document.getElementById('savedAt').textContent = archive.savedAt ? `Disimpan ${new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(archive.savedAt))}` : '';
-      const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
       archiveBody.innerHTML = archive.staff.length ? archive.staff.map((staff, index) => {
-        const dailyDetails = (staff.days || []).map(day => {
-          const shifts = day.shifts || [];
-          const dayName = dayNames[new Date(`${day.date}T00:00:00`).getDay()];
-          const detail = shifts.length
-            ? shifts.map((shift, shiftIndex) => `Shift ${shiftIndex + 1}: ${formatTime(shift.checkIn)} - ${formatTime(shift.checkOut)}`).join('<br>')
-            : 'Tidak ada shift';
-          return `<div class="border-b border-slate-800 py-2 last:border-0"><div class="flex flex-wrap items-center justify-between gap-2"><strong class="text-amber-200">${dayName}, ${formatDate(day.date)}</strong><span class="text-emerald-300">${formatDuration(durationOf(shifts))}</span></div><p class="mt-1 leading-relaxed text-slate-400">${detail}</p></div>`;
-        }).join('');
-        return `<tr><td class="px-5 py-4 text-slate-500">${index + 1}</td><td class="px-5 py-4 font-semibold text-slate-100">${escapeHtml(staff.name)}</td><td class="px-5 py-4">${escapeHtml(staff.role)}</td><td class="px-5 py-3"><details class="max-w-xl"><summary class="cursor-pointer text-sky-300 hover:text-sky-200">Lihat rincian 7 hari</summary><div class="mt-2 min-w-64">${dailyDetails}</div></details></td><td class="whitespace-nowrap px-4 py-4 text-center text-sm font-bold text-emerald-300">${formatDuration(staff.totalMinutes)}</td></tr>`;
+        const shiftCount = (staff.days || []).reduce((total, day) => total + (day.shifts || []).length, 0);
+        const activeDays = (staff.days || []).filter(day => (day.shifts || []).length > 0).length;
+        const hasNote = typeof staff.note === 'string' && staff.note.trim().length > 0;
+        const noteIndicator = hasNote
+          ? '<span class="weekly-note-indicator has-note" title="Staff memiliki catatan"><i class="fa-solid fa-note-sticky"></i><span>Ada catatan</span></span>'
+          : '<span class="weekly-note-indicator no-note" title="Belum ada catatan"><i class="fa-regular fa-note-sticky"></i><span>Tanpa catatan</span></span>';
+        return `<tr><td class="px-5 py-4 text-slate-500">${index + 1}</td><td class="px-5 py-4 font-semibold text-slate-100">${escapeHtml(staff.name)}</td><td class="px-5 py-4">${escapeHtml(staff.role)}</td><td class="px-5 py-3"><div class="weekly-summary"><span class="weekly-shift-badge${shiftCount ? ' has-shifts' : ''}"><i class="fa-solid fa-layer-group"></i><strong>${shiftCount}</strong><span>shift</span></span><span class="weekly-active-days">${activeDays}<span>/7 hari</span></span>${noteIndicator}<button type="button" data-weekly-staff-details="${index}" class="weekly-details-button"><span>Lihat detail</span><i class="fa-solid fa-arrow-up-right-from-square"></i></button></div></td><td class="whitespace-nowrap px-4 py-4 text-center text-sm font-bold text-emerald-300">${formatDuration(staff.totalMinutes)}</td></tr>`;
       }).join('') : '<tr><td colspan="5" class="px-5 py-12 text-center text-slate-400">Rekap ini belum memiliki data staff.</td></tr>';
     }
 
@@ -245,8 +350,25 @@
     });
 
     archiveSelect.addEventListener('change', () => {
+      weeklyStaffDetailsDialog.close();
       const archive = archives[Number(archiveSelect.value)];
       if (archive) renderArchive(archive);
+    });
+    archiveBody.addEventListener('click', event => {
+      const button = event.target.closest('[data-weekly-staff-details]');
+      if (button) renderWeeklyStaffDetails(button.dataset.weeklyStaffDetails);
+    });
+    document.getElementById('closeWeeklyStaffDetails').addEventListener('click', () => weeklyStaffDetailsDialog.close());
+    const weeklyStaffNoteInput = document.getElementById('weeklyStaffNote');
+    weeklyStaffNoteInput.addEventListener('input', () => {
+      document.getElementById('weeklyStaffNoteCount').textContent = `${weeklyStaffNoteInput.value.length}/1000`;
+      const status = document.getElementById('weeklyStaffNoteStatus');
+      status.className = 'is-unsaved';
+      status.textContent = 'Perubahan belum disimpan';
+    });
+    document.getElementById('saveWeeklyStaffNote').addEventListener('click', saveWeeklyStaffNote);
+    weeklyStaffDetailsDialog.addEventListener('click', event => {
+      if (event.target === weeklyStaffDetailsDialog) weeklyStaffDetailsDialog.close();
     });
 
     document.getElementById('deleteArchiveButton').addEventListener('click', () => {

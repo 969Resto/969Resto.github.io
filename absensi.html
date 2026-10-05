@@ -283,7 +283,7 @@
     function shiftSummary(record, staffId) {
       const shifts = getShifts(record);
       const hasShifts = shifts.length > 0;
-      return `<div class="shift-summary${hasShifts ? ' has-shifts' : ''}"><span class="shift-count-badge"><i class="fa-solid fa-layer-group"></i><strong>${shifts.length}</strong><span>shift</span></span><button type="button" data-open-shift-details data-staff-id="${staffId}" class="shift-details-button"><span>Lihat detail</span><i class="fa-solid fa-arrow-up-right-from-square"></i></button></div>`;
+      return `<div class="shift-summary${hasShifts ? ' has-shifts' : ''}"><span class="shift-count-badge"><i class="fa-solid fa-layer-group"></i><strong>${shifts.length}</strong><span>${shifts.length === 1 ? 'shift' : 'shift'}</span></span><button type="button" data-open-shift-details data-staff-id="${staffId}" class="shift-details-button"><span>Lihat detail</span><i class="fa-solid fa-arrow-up-right-from-square"></i></button></div>`;
     }
 
     function formatDuration(minutes) {
@@ -667,7 +667,7 @@
             return { date, shifts: getShifts(record) };
           });
           const totalMinutes = days.reduce((total, day) => total + attendanceMinutes({ shifts: day.shifts }), 0);
-          return { id: staff.id, name: staff.name, role: staff.role, days, totalMinutes };
+          return { id: staff.id, name: staff.name, role: staff.role, days, totalMinutes, note: staff.note || '' };
         })
       };
 
