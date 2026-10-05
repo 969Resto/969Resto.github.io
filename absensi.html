@@ -40,7 +40,7 @@
       <div>
         <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">Manajemen Tim</p>
         <h2 class="font-luxury text-2xl font-bold text-slate-100 sm:text-3xl">Pembukuan Absensi Mingguan</h2>
-        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">Periode pembukuan berjalan Senin sampai Minggu. Pilih hari untuk mengisi jam shift secara manual.</p>
+        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">Periode pembukuan berjalan Senin sampai Minggu. Pilih hari untuk mengisi jam shift secara manual dalam format 24 jam (HH:MM).</p>
       </div>
       <div class="flex flex-wrap items-end gap-3">
         <p class="text-xs text-slate-400">Periode <span id="weekRange" class="ml-1 font-semibold text-amber-200"></span></p>
@@ -280,6 +280,10 @@
       return new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(timestamp));
     }
 
+    function isValid24HourTime(value) {
+      return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
+    }
+
     function shiftSummary(record, staffId) {
       const shifts = getShifts(record);
       const hasShifts = shifts.length > 0;
@@ -334,7 +338,7 @@
         return `<tr>
           <td class="px-5 py-3 text-slate-500">${index + 1}</td>
           <td class="px-5 py-3"><span class="block font-semibold text-slate-100">${escapeHtml(staff.name)}</span><span class="mt-1 block text-[11px] text-slate-500">${escapeHtml(staff.role)}</span></td>
-          <td class="px-5 py-3"><div class="flex flex-wrap items-end gap-2"><label class="text-[10px] text-slate-400">Masuk<input data-staff-id="${id}" data-field="checkIn" type="time" value="${escapeHtml(pending.checkIn || '')}" class="field-dark mt-1 block w-24 rounded-md px-2 py-2 [color-scheme:dark]"></label><label class="text-[10px] text-slate-400">Pulang<input data-staff-id="${id}" data-field="checkOut" type="time" value="${escapeHtml(pending.checkOut || '')}" class="field-dark mt-1 block w-24 rounded-md px-2 py-2 [color-scheme:dark]"></label><button type="button" data-attendance-action data-staff-id="${id}" class="whitespace-nowrap rounded-md border border-emerald-500/40 bg-emerald-950/50 px-3 py-2 font-semibold text-emerald-200 transition hover:bg-emerald-900/50"><i class="fa-solid fa-plus mr-1"></i>Tambah Absensi</button></div></td>
+          <td class="px-5 py-3"><div class="flex flex-wrap items-end gap-2"><label class="text-[10px] text-slate-400">Masuk<input data-staff-id="${id}" data-field="checkIn" type="text" maxlength="5" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" placeholder="HH:MM" aria-label="Jam masuk format 24 jam, contoh 08:30" value="${escapeHtml(pending.checkIn || '')}" class="field-dark mt-1 block w-24 rounded-md px-2 py-2"></label><label class="text-[10px] text-slate-400">Pulang<input data-staff-id="${id}" data-field="checkOut" type="text" maxlength="5" pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]" placeholder="HH:MM" aria-label="Jam pulang format 24 jam, contoh 17:30" value="${escapeHtml(pending.checkOut || '')}" class="field-dark mt-1 block w-24 rounded-md px-2 py-2"></label><button type="button" data-attendance-action data-staff-id="${id}" class="whitespace-nowrap rounded-md border border-emerald-500/40 bg-emerald-950/50 px-3 py-2 font-semibold text-emerald-200 transition hover:bg-emerald-900/50"><i class="fa-solid fa-plus mr-1"></i>Tambah Absensi</button></div></td>
           <td class="px-5 py-3">${shiftSummary(record, id)}</td>
           <td id="total-${id}" class="whitespace-nowrap px-3 py-3 text-center text-sm font-bold text-emerald-300">${formatDuration(weeklyTotal)}</td>
         </tr>`;
@@ -370,6 +374,11 @@
       const pending = record.pending || {};
       if (!pending.checkIn || !pending.checkOut) {
         saveNotice.textContent = 'Isi jam masuk dan jam pulang sebelum menambahkan absensi.';
+        saveNotice.className = 'text-xs text-rose-300';
+        return;
+      }
+      if (!isValid24HourTime(pending.checkIn) || !isValid24HourTime(pending.checkOut)) {
+        saveNotice.textContent = 'Gunakan format 24 jam HH:MM (00:00–23:59), contoh 08:30.';
         saveNotice.className = 'text-xs text-rose-300';
         return;
       }
