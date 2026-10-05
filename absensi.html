@@ -40,7 +40,7 @@
       <div>
         <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">Manajemen Tim</p>
         <h2 class="font-luxury text-2xl font-bold text-slate-100 sm:text-3xl">Pembukuan Absensi Mingguan</h2>
-        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">Periode pembukuan berjalan Senin sampai Minggu. Pilih hari untuk mengisi jam shift secara manual dengan 4 angka format 24 jam (HHMM).</p>
+        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">Periode pembukuan berjalan Senin sampai Minggu. Pilih hari untuk mengisi jam shift secara manual dalam format 24 jam (HH:MM).</p>
       </div>
       <div class="flex flex-wrap items-end gap-3">
         <p class="text-xs text-slate-400">Periode <span id="weekRange" class="ml-1 font-semibold text-amber-200"></span></p>
@@ -285,6 +285,11 @@
       return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value) ? value : '';
     }
 
+    function split24HourTime(value = '') {
+      const digits = String(value).replace(/\D/g, '').slice(0, 4);
+      return { hours: digits.slice(0, 2), minutes: digits.slice(2) };
+    }
+
     function shiftSummary(record, staffId) {
       const shifts = getShifts(record);
       const hasShifts = shifts.length > 0;
@@ -339,7 +344,11 @@
         return `<tr>
           <td class="px-5 py-3 text-slate-500">${index + 1}</td>
           <td class="px-5 py-3"><span class="block font-semibold text-slate-100">${escapeHtml(staff.name)}</span><span class="mt-1 block text-[11px] text-slate-500">${escapeHtml(staff.role)}</span></td>
-          <td class="px-5 py-3"><div class="flex flex-wrap items-end gap-2"><label class="text-[10px] text-slate-400">Masuk<input data-staff-id="${id}" data-field="checkIn" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="0830" aria-label="Jam masuk format 24 jam, 4 angka, contoh 0830" value="${escapeHtml(pending.checkIn || '')}" class="field-dark mt-1 block w-24 rounded-md px-2 py-2"></label><label class="text-[10px] text-slate-400">Pulang<input data-staff-id="${id}" data-field="checkOut" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="1730" aria-label="Jam pulang format 24 jam, 4 angka, contoh 1730" value="${escapeHtml(pending.checkOut || '')}" class="field-dark mt-1 block w-24 rounded-md px-2 py-2"></label><button type="button" data-attendance-action data-staff-id="${id}" class="whitespace-nowrap rounded-md border border-emerald-500/40 bg-emerald-950/50 px-3 py-2 font-semibold text-emerald-200 transition hover:bg-emerald-900/50"><i class="fa-solid fa-plus mr-1"></i>Tambah Absensi</button></div></td>
+          <td class="px-5 py-3"><div class="flex flex-wrap items-end gap-2">
+            <label class="text-[10px] text-slate-400">Masuk<span data-time-entry data-staff-id="${id}" data-field="checkIn" class="mt-1 flex items-center gap-1"><input data-time-part="hours" type="text" inputmode="numeric" maxlength="2" placeholder="HH" aria-label="Jam masuk, jam" value="${escapeHtml(split24HourTime(pending.checkIn).hours)}" class="field-dark w-10 rounded-md px-1 py-2 text-center"><span aria-hidden="true" class="text-sm font-bold text-amber-300">:</span><input data-time-part="minutes" type="text" inputmode="numeric" maxlength="2" placeholder="MM" aria-label="Jam masuk, menit" value="${escapeHtml(split24HourTime(pending.checkIn).minutes)}" class="field-dark w-10 rounded-md px-1 py-2 text-center"></span></label>
+            <label class="text-[10px] text-slate-400">Pulang<span data-time-entry data-staff-id="${id}" data-field="checkOut" class="mt-1 flex items-center gap-1"><input data-time-part="hours" type="text" inputmode="numeric" maxlength="2" placeholder="HH" aria-label="Jam pulang, jam" value="${escapeHtml(split24HourTime(pending.checkOut).hours)}" class="field-dark w-10 rounded-md px-1 py-2 text-center"><span aria-hidden="true" class="text-sm font-bold text-amber-300">:</span><input data-time-part="minutes" type="text" inputmode="numeric" maxlength="2" placeholder="MM" aria-label="Jam pulang, menit" value="${escapeHtml(split24HourTime(pending.checkOut).minutes)}" class="field-dark w-10 rounded-md px-1 py-2 text-center"></span></label>
+            <button type="button" data-attendance-action data-staff-id="${id}" class="whitespace-nowrap rounded-md border border-emerald-500/40 bg-emerald-950/50 px-3 py-2 font-semibold text-emerald-200 transition hover:bg-emerald-900/50"><i class="fa-solid fa-plus mr-1"></i>Tambah Absensi</button>
+          </div></td>
           <td class="px-5 py-3">${shiftSummary(record, id)}</td>
           <td id="total-${id}" class="whitespace-nowrap px-3 py-3 text-center text-sm font-bold text-emerald-300">${formatDuration(weeklyTotal)}</td>
         </tr>`;
@@ -381,7 +390,7 @@
       const checkInTime = normalize24HourTime(pending.checkIn);
       const checkOutTime = normalize24HourTime(pending.checkOut);
       if (!checkInTime || !checkOutTime) {
-        saveNotice.textContent = 'Masukkan 4 angka format 24 jam (HHMM), contoh 0830.';
+        saveNotice.textContent = 'Masukkan jam dan menit dengan format 24 jam (HH:MM), contoh 08:30.';
         saveNotice.className = 'text-xs text-rose-300';
         return;
       }
@@ -1016,10 +1025,15 @@
       if (deleteButton) requestDeleteShift(deleteButton.dataset.staffId, Number(deleteButton.dataset.shiftIndex));
     });
     function updateDraftField(event) {
-      const { staffId, field } = event.target.dataset;
-      if (!staffId || !field) return;
+      const input = event.target;
+      if (!input.matches('[data-time-part]')) return;
+      input.value = input.value.replace(/\D/g, '').slice(0, 2);
+      const timeEntry = input.closest('[data-time-entry]');
+      const { staffId, field } = timeEntry.dataset;
+      const hours = timeEntry.querySelector('[data-time-part="hours"]').value;
+      const minutes = timeEntry.querySelector('[data-time-part="minutes"]').value;
       const record = attendanceRecords[staffId] || { shifts: [], pending: {} };
-      record.pending = { ...(record.pending || {}), [field]: event.target.value };
+      record.pending = { ...(record.pending || {}), [field]: hours || minutes ? `${hours}:${minutes}` : '' };
       attendanceRecords[staffId] = record;
       saveDraft();
     }
