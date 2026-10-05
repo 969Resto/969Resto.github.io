@@ -308,7 +308,7 @@
       if (!staff) return;
       const record = attendanceRecords[shiftDetailsStaffId] || {};
       const shifts = getShifts(record);
-      const isEditing = isAdminAuthenticated && editingStaffIds.has(String(shiftDetailsStaffId));
+      const isEditing = editingStaffIds.has(String(shiftDetailsStaffId));
       const detailDialog = document.getElementById('shiftDetailsDialog');
       document.getElementById('shiftDetailsTitle').textContent = staff.name;
       document.getElementById('shiftDetailsRole').textContent = staff.role;
@@ -328,7 +328,7 @@
           : '';
         return `<article class="shift-detail-card${isOngoing ? ' is-ongoing' : ''}"><div class="shift-card-topline"><span class="shift-card-index">SHIFT ${String(index + 1).padStart(2, '0')}</span>${isOngoing ? '<span class="shift-live-badge"><span></span>SEDANG BERJALAN</span>' : ''}${deleteButton}</div><div class="shift-time-row"><div class="shift-time-point"><span class="shift-time-label">MASUK</span><strong>${formatClockTime(shift.checkIn)}</strong></div><span class="shift-time-connector"><i class="fa-solid fa-arrow-right"></i></span><div class="shift-time-point"><span class="shift-time-label">PULANG</span><strong>${endLabel}</strong></div></div><div class="shift-duration-row"><span><i class="fa-regular fa-clock mr-1.5"></i>Durasi shift</span><strong>${duration}</strong></div></article>`;
       }).join('') : '<div class="shift-empty-state"><span><i class="fa-regular fa-calendar-xmark"></i></span><strong>Belum ada shift</strong><p>Absensi staff untuk hari ini belum tercatat.</p></div>';
-      document.getElementById('shiftDetailsActions').innerHTML = shifts.length && isAdminAuthenticated
+      document.getElementById('shiftDetailsActions').innerHTML = shifts.length
         ? `<button type="button" data-toggle-shift-edit data-staff-id="${escapeHtml(staff.id)}" aria-pressed="${isEditing}" class="shift-edit-button${isEditing ? ' is-editing' : ''}"><i class="fa-solid ${isEditing ? 'fa-check' : 'fa-pen'}"></i>${isEditing ? 'Selesai mengedit' : 'Edit shift'}</button>`
         : '';
       if (!detailDialog.open) detailDialog.showModal();
@@ -432,7 +432,6 @@
     async function deleteShift(staffId, shiftIndex) {
       const record = attendanceRecords[staffId];
       if (!record || !Number.isInteger(shiftIndex) || shiftIndex < 0 || shiftIndex >= getShifts(record).length) return;
-      if (!isAdminAuthenticated) return;
       const shift = getShifts(record)[shiftIndex];
       if (shift.id) {
         try {
@@ -441,9 +440,10 @@
             mutation DeleteAttendanceShift($id: uuid!) {
               delete_attendance_shifts_by_pk(id: $id) { id }
             }
-          `, { id: shift.id }, 'attendance_admin');
+          `, { id: shift.id }, 'public');
         } catch (error) {
-          document.getElementById('adminStatus').textContent = `Shift gagal dihapus: ${error.message}`;
+          saveNotice.textContent = `Shift gagal dihapus: ${error.message}`;
+          saveNotice.className = 'text-xs text-rose-300';
           return;
         }
       }
@@ -451,15 +451,16 @@
       attendanceRecords[staffId] = { ...record, shifts };
       saveDraft();
       renderAttendance();
+      saveNotice.textContent = 'Shift berhasil dihapus.';
+      saveNotice.className = 'text-xs text-emerald-300';
     }
 
     function requestDeleteShift(staffId, shiftIndex) {
-      if (!isAdminAuthenticated) return;
       const staff = staffList.find(item => String(item.id) === String(staffId));
       const record = attendanceRecords[staffId];
       if (!staff || !record || shiftIndex < 0 || shiftIndex >= getShifts(record).length) return;
       pendingShiftDeletion = { staffId, shiftIndex };
-      document.getElementById('deleteShiftMessage').textContent = `Yakin ingin menghapus shift ${shiftIndex + 1} milik ${staff.name}? Total absensi mingguan akan diperbarui.`;
+      document.getElementById('deleteShiftMessage').textContent = `Yakin ingin menghapus shift ${shiftIndex + 1} milik ${staff.name}? Siapa pun yang membuka halaman ini dapat menghapus shift. Total absensi mingguan akan diperbarui.`;
       document.getElementById('deleteShiftDialog').showModal();
       document.getElementById('cancelDeleteShift').focus();
     }
