@@ -73,7 +73,7 @@
               <th class="px-5 py-4">No</th>
               <th class="px-5 py-4">Nama Staff</th>
               <th class="px-5 py-4">Input Manual</th>
-              <th class="px-5 py-4">Riwayat Shift Hari Terpilih</th>
+              <th class="px-5 py-4">Shift Hari Terpilih</th>
               <th class="whitespace-nowrap px-3 py-4 text-center">Total Mingguan</th>
             </tr>
           </thead>
@@ -85,6 +85,29 @@
     </section>
     <p class="text-[11px] leading-relaxed text-slate-500"><i class="fa-solid fa-circle-info mr-1 text-amber-400"></i><span id="storageNotice">Menghubungkan absensi ke Nhost...</span></p>
   </main>
+
+  <dialog id="shiftDetailsDialog" class="shift-details-dialog w-full max-w-lg p-0 text-slate-100" aria-labelledby="shiftDetailsTitle">
+    <div class="shift-modal-shell">
+      <div class="shift-modal-header">
+        <div class="flex min-w-0 items-start gap-3">
+          <span class="shift-modal-icon"><i class="fa-solid fa-calendar-check"></i></span>
+          <div class="min-w-0">
+            <p id="shiftDetailsDate" class="shift-modal-date"></p>
+            <h3 id="shiftDetailsTitle" class="mt-1 truncate font-luxury text-lg font-bold text-amber-50">Detail Shift</h3>
+            <p id="shiftDetailsRole" class="mt-1 text-xs text-slate-400"></p>
+          </div>
+        </div>
+        <button id="closeShiftDetails" type="button" class="shift-modal-close" aria-label="Tutup detail shift"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="shift-metrics">
+        <div class="shift-metric-card"><span class="shift-metric-icon text-cyan-300"><i class="fa-solid fa-layer-group"></i></span><div><p class="shift-metric-label">Jumlah Shift</p><strong id="shiftDetailsCount" class="shift-metric-value">0</strong></div></div>
+        <div class="shift-metric-card"><span class="shift-metric-icon text-emerald-300"><i class="fa-regular fa-clock"></i></span><div><p class="shift-metric-label">Total Durasi</p><strong id="shiftDetailsTotal" class="shift-metric-value">0:00</strong></div></div>
+      </div>
+      <div class="shift-list-heading"><span>RINCIAN HARI INI</span><span class="shift-list-line"></span></div>
+      <div id="shiftDetailsList" class="shift-details-list"></div>
+      <div id="shiftDetailsActions" class="shift-modal-actions"></div>
+    </div>
+  </dialog>
 
   <dialog id="deleteShiftDialog" class="w-full max-w-md rounded-xl border border-rose-500/30 bg-slate-950 p-0 text-slate-100 shadow-2xl backdrop:bg-black/75 backdrop:backdrop-blur-sm" aria-labelledby="deleteShiftTitle" aria-describedby="deleteShiftMessage">
     <div class="p-5 sm:p-6">
@@ -199,6 +222,7 @@
     let onlineWeekLoadVersion = 0;
     let lastAutoArchivedWeekStart = '';
     let attendanceSyncInProgress = false;
+    let shiftDetailsStaffId = null;
 
     function localDateString(date = new Date()) {
       const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
@@ -256,25 +280,48 @@
       return new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(timestamp));
     }
 
-    function shiftSummary(record, staffId, isEditing) {
+    function shiftSummary(record, staffId) {
       const shifts = getShifts(record);
-      const shiftList = shifts.map((shift, index) => {
-        const end = shift.checkOut ? formatClockTime(shift.checkOut) : 'Berjalan';
-        const deleteButton = isEditing
-          ? `<button type="button" data-delete-shift data-staff-id="${staffId}" data-shift-index="${index}" aria-label="Hapus shift ${index + 1}" title="Hapus shift ini" class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-rose-300 transition hover:bg-rose-500/15 hover:text-rose-200"><i class="fa-solid fa-trash-can"></i></button>`
-          : '';
-        return `<span class="flex items-center gap-2 whitespace-nowrap">Shift ${index + 1}: ${formatClockTime(shift.checkIn)} - ${end}${deleteButton}</span>`;
-      }).join('');
-      const editButton = (shifts.length && isAdminAuthenticated) || isEditing
-        ? `<button type="button" data-toggle-shift-edit data-staff-id="${staffId}" aria-pressed="${isEditing}" class="mt-1 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-semibold ${isEditing ? 'bg-amber-500/15 text-amber-200 hover:bg-amber-500/25' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'}"><i class="fa-solid ${isEditing ? 'fa-check' : 'fa-pen'}"></i>${isEditing ? 'Selesai' : 'Edit'}</button>`
-        : '';
-      return `<div class="space-y-1">${shiftList || '<span class="text-slate-500">Belum ada shift</span>'}${editButton}</div>`;
+      const hasShifts = shifts.length > 0;
+      return `<div class="shift-summary${hasShifts ? ' has-shifts' : ''}"><span class="shift-count-badge"><i class="fa-solid fa-layer-group"></i><strong>${shifts.length}</strong><span>shift</span></span><button type="button" data-open-shift-details data-staff-id="${staffId}" class="shift-details-button"><span>Lihat detail</span><i class="fa-solid fa-arrow-up-right-from-square"></i></button></div>`;
     }
 
     function formatDuration(minutes) {
       const hours = Math.floor(minutes / 60);
       const remainingMinutes = minutes % 60;
       return `${hours}:${String(remainingMinutes).padStart(2, '0')}`;
+    }
+
+    function renderShiftDetails() {
+      if (!shiftDetailsStaffId) return;
+      const staff = staffList.find(item => String(item.id) === String(shiftDetailsStaffId));
+      if (!staff) return;
+      const record = attendanceRecords[shiftDetailsStaffId] || {};
+      const shifts = getShifts(record);
+      const isEditing = isAdminAuthenticated && editingStaffIds.has(String(shiftDetailsStaffId));
+      const detailDialog = document.getElementById('shiftDetailsDialog');
+      document.getElementById('shiftDetailsTitle').textContent = staff.name;
+      document.getElementById('shiftDetailsRole').textContent = staff.role;
+      document.getElementById('shiftDetailsDate').textContent = formatDateLabel(attendanceDate.value, { day: '2-digit', month: 'long', year: 'numeric' });
+      document.getElementById('shiftDetailsCount').textContent = shifts.length;
+      document.getElementById('shiftDetailsTotal').textContent = formatDuration(attendanceMinutes(record));
+      document.getElementById('shiftDetailsList').innerHTML = shifts.length ? shifts.map((shift, index) => {
+        const start = new Date(shift.checkIn).getTime();
+        const end = shift.checkOut ? new Date(shift.checkOut).getTime() : Date.now();
+        const duration = Number.isFinite(start) && Number.isFinite(end) && end >= start
+          ? formatDuration(Math.floor((end - start) / 60000))
+          : 'Tidak tersedia';
+        const endLabel = shift.checkOut ? formatClockTime(shift.checkOut) : 'Berjalan';
+        const isOngoing = !shift.checkOut;
+        const deleteButton = isEditing
+          ? `<button type="button" data-delete-shift data-staff-id="${escapeHtml(staff.id)}" data-shift-index="${index}" aria-label="Hapus shift ${index + 1}" title="Hapus shift ini" class="shift-delete-button"><i class="fa-solid fa-trash-can"></i></button>`
+          : '';
+        return `<article class="shift-detail-card${isOngoing ? ' is-ongoing' : ''}"><div class="shift-card-topline"><span class="shift-card-index">SHIFT ${String(index + 1).padStart(2, '0')}</span>${isOngoing ? '<span class="shift-live-badge"><span></span>SEDANG BERJALAN</span>' : ''}${deleteButton}</div><div class="shift-time-row"><div class="shift-time-point"><span class="shift-time-label">MASUK</span><strong>${formatClockTime(shift.checkIn)}</strong></div><span class="shift-time-connector"><i class="fa-solid fa-arrow-right"></i></span><div class="shift-time-point"><span class="shift-time-label">PULANG</span><strong>${endLabel}</strong></div></div><div class="shift-duration-row"><span><i class="fa-regular fa-clock mr-1.5"></i>Durasi shift</span><strong>${duration}</strong></div></article>`;
+      }).join('') : '<div class="shift-empty-state"><span><i class="fa-regular fa-calendar-xmark"></i></span><strong>Belum ada shift</strong><p>Absensi staff untuk hari ini belum tercatat.</p></div>';
+      document.getElementById('shiftDetailsActions').innerHTML = shifts.length && isAdminAuthenticated
+        ? `<button type="button" data-toggle-shift-edit data-staff-id="${escapeHtml(staff.id)}" aria-pressed="${isEditing}" class="shift-edit-button${isEditing ? ' is-editing' : ''}"><i class="fa-solid ${isEditing ? 'fa-check' : 'fa-pen'}"></i>${isEditing ? 'Selesai mengedit' : 'Edit shift'}</button>`
+        : '';
+      if (!detailDialog.open) detailDialog.showModal();
     }
 
     function renderAttendance() {
@@ -284,17 +331,17 @@
         const weeklyTotal = weekDates.reduce((total, day) => total + attendanceMinutes(weeklyRecords[day]?.[staff.id] || {}), 0);
         const id = escapeHtml(staff.id);
         const pending = record.pending || {};
-        const isEditing = isAdminAuthenticated && editingStaffIds.has(staff.id);
         return `<tr>
           <td class="px-5 py-3 text-slate-500">${index + 1}</td>
           <td class="px-5 py-3"><span class="block font-semibold text-slate-100">${escapeHtml(staff.name)}</span><span class="mt-1 block text-[11px] text-slate-500">${escapeHtml(staff.role)}</span></td>
           <td class="px-5 py-3"><div class="flex flex-wrap items-end gap-2"><label class="text-[10px] text-slate-400">Masuk<input data-staff-id="${id}" data-field="checkIn" type="time" value="${escapeHtml(pending.checkIn || '')}" class="field-dark mt-1 block w-24 rounded-md px-2 py-2 [color-scheme:dark]"></label><label class="text-[10px] text-slate-400">Pulang<input data-staff-id="${id}" data-field="checkOut" type="time" value="${escapeHtml(pending.checkOut || '')}" class="field-dark mt-1 block w-24 rounded-md px-2 py-2 [color-scheme:dark]"></label><button type="button" data-attendance-action data-staff-id="${id}" class="whitespace-nowrap rounded-md border border-emerald-500/40 bg-emerald-950/50 px-3 py-2 font-semibold text-emerald-200 transition hover:bg-emerald-900/50"><i class="fa-solid fa-plus mr-1"></i>Tambah Absensi</button></div></td>
-          <td class="px-5 py-3 leading-6">${shiftSummary(record, id, isEditing)}</td>
+          <td class="px-5 py-3">${shiftSummary(record, id)}</td>
           <td id="total-${id}" class="whitespace-nowrap px-3 py-3 text-center text-sm font-bold text-emerald-300">${formatDuration(weeklyTotal)}</td>
         </tr>`;
       }).join('') : `<tr><td colspan="5" class="px-5 py-12 text-center text-slate-400">${staffList.length ? 'Staff tidak ditemukan.' : 'Belum ada staff aktif untuk ditampilkan.'}</td></tr>`;
 
       updateSummary();
+      if (shiftDetailsStaffId) renderShiftDetails();
     }
 
     function updateSummary() {
@@ -439,6 +486,9 @@
     }
 
     function loadWeekDrafts(preferredDate = '') {
+      shiftDetailsStaffId = null;
+      const shiftDetailsDialog = document.getElementById('shiftDetailsDialog');
+      if (shiftDetailsDialog.open) shiftDetailsDialog.close();
       weekDates = getWeekDates(weekStart.value || localDateString());
       weekStart.value = weekDates[0];
       weekRange.textContent = `${formatDateLabel(weekDates[0], { day: '2-digit', month: 'short', year: 'numeric' })} - ${formatDateLabel(weekDates[6], { day: '2-digit', month: 'short', year: 'numeric' })}`;
@@ -917,6 +967,8 @@
     document.getElementById('confirmWeekReset').addEventListener('click', resetWeeklyAttendance);
 
     attendanceDate.addEventListener('change', () => {
+      shiftDetailsStaffId = null;
+      document.getElementById('shiftDetailsDialog').close();
       editingStaffIds.clear();
       attendanceRecords = weeklyRecords[attendanceDate.value] || {};
       renderAttendance();
@@ -926,6 +978,22 @@
     });
     searchStaff.addEventListener('input', renderAttendance);
     attendanceBody.addEventListener('click', event => {
+      const detailsButton = event.target.closest('[data-open-shift-details]');
+      if (detailsButton) {
+        shiftDetailsStaffId = detailsButton.dataset.staffId;
+        renderShiftDetails();
+        return;
+      }
+      const button = event.target.closest('[data-attendance-action]');
+      if (button) recordAttendance(button.dataset.staffId);
+    });
+    const shiftDetailsDialog = document.getElementById('shiftDetailsDialog');
+    document.getElementById('closeShiftDetails').addEventListener('click', () => shiftDetailsDialog.close());
+    shiftDetailsDialog.addEventListener('close', () => {
+      shiftDetailsStaffId = null;
+    });
+    shiftDetailsDialog.addEventListener('click', event => {
+      if (event.target === shiftDetailsDialog) shiftDetailsDialog.close();
       const editButton = event.target.closest('[data-toggle-shift-edit]');
       if (editButton) {
         const staffId = editButton.dataset.staffId;
@@ -935,12 +1003,7 @@
         return;
       }
       const deleteButton = event.target.closest('[data-delete-shift]');
-      if (deleteButton) {
-        requestDeleteShift(deleteButton.dataset.staffId, Number(deleteButton.dataset.shiftIndex));
-        return;
-      }
-      const button = event.target.closest('[data-attendance-action]');
-      if (button) recordAttendance(button.dataset.staffId);
+      if (deleteButton) requestDeleteShift(deleteButton.dataset.staffId, Number(deleteButton.dataset.shiftIndex));
     });
     function updateDraftField(event) {
       const { staffId, field } = event.target.dataset;
