@@ -1,1 +1,8 @@
 supabase/.temp/
+workers/logduty/node_modules/
+workers/logduty/.wrangler/
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*

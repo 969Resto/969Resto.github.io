@@ -14,6 +14,20 @@ The attendance page uses Nhost for shift rows and weekly recap archives. Browser
 5. Assign `attendance_admin` as an allowed role for the three administrator accounts. Keep their default role as `user`.
 6. Keep the Nhost admin secret on a trusted server or function. Never put it in `absensi.html`, a public environment file, or GitHub Pages.
 
+## Discord Log Duty via Cloudflare Wrangler
+
+The **Management > Log Duty Discord Mingguan** page reads only the Cloudflare D1 duty log table. It is independent from the manual Nhost attendance records and shows one selected Monday-Sunday ISO week at a time. The scheduled Cloudflare Worker reads embeds in the Discord duty channel every 15 minutes and groups shifts by the immutable `License`, not player names or Discord nicknames.
+
+1. In Discord Developer Portal, create a bot, enable **Message Content Intent**, and invite it with **View Channels** and **Read Message History** for the duty-log channel.
+2. Open a terminal in `workers/logduty` and run `npm ci`, then `npx wrangler login`.
+3. The `969resto-logduty` D1 database is already configured in `workers/logduty/wrangler.toml`. Do not create it again. For a new Cloudflare account, create a D1 database and replace the database ID in that file.
+4. Initialize D1 with `npx wrangler d1 execute 969resto-logduty --remote --file=schema.sql`.
+5. Set secrets without adding them to source code: `npx wrangler secret put DISCORD_BOT_TOKEN` and `npx wrangler secret put DISCORD_DUTY_CHANNEL_ID`. Wrangler asks for each value privately in the terminal. `DUTY_TIMEZONE_OFFSET_MINUTES` is in `wrangler.toml` (`420` for WIB, `480` for WITA, `540` for WIT).
+6. Deploy from that folder with `npx wrangler deploy`. The Worker URL is already connected to `admin/logduty.html`.
+7. After deploying the website, sign in to the Management page and open **Log Duty**. The Worker runs every 15 minutes and also syncs when an administrator loads the weekly report. Older channel messages are backfilled in batches. Each Discord message ID is stored once, and the summary page verifies the current Nhost `attendance_admin` session before returning the weekly D1 totals.
+
+The parser uses `Player Name`, `DiscordID`, `License`, `Shift Duration`, `Start date`, and `End date`; the separate `Total Mingguan` field in Discord embeds is ignored. Never paste the bot token into a chat, website file, GitHub repository, or browser console.
+
 ## Database Heartbeat
 
 The GitHub Actions workflow at `.github/workflows/nhost-heartbeat.yml` reads one `attendance_shifts` row every two days using the `public` Hasura role. It needs no secret, but the migration and public select permission above must already be applied. GitHub Actions runs scheduled workflows from the repository's default branch; use the workflow's **Run workflow** action to test it after pushing. A successful run confirms the GraphQL/database query worked at that time, but cannot prevent Nhost maintenance, outages, or platform-initiated pauses.

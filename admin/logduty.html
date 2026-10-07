@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>969 Resto - Log Duty Discord</title>
+  <link rel="icon" type="image/png" href="../Invoice/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="index.css" />
+  <link rel="stylesheet" href="logduty.css" />
+</head>
+<body class="logduty-page min-h-screen p-4 sm:p-6 md:p-8">
+  <div class="logduty-shell mx-auto w-full max-w-7xl">
+    <header class="logduty-topbar flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <a href="./" class="brand-lockup flex items-center gap-3" aria-label="Kembali ke dashboard management">
+        <span class="brand-mark"><img src="../Invoice/logo.png" alt="" onerror="this.style.display='none'"><i class="fa-solid fa-utensils"></i></span>
+        <span>
+          <strong class="font-luxury">969 RESTO</strong>
+          <span>MANAGEMENT SYSTEM <i class="fa-solid fa-circle text-[5px]"></i> DUTY INTELLIGENCE</span>
+        </span>
+      </a>
+      <nav class="flex flex-wrap items-center gap-2" aria-label="Navigasi halaman">
+        <a href="./" class="topbar-link"><i class="fa-solid fa-arrow-left"></i><span>Dashboard</span></a>
+        <button id="logoutButton" type="button" class="topbar-link logout-link"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Kunci Sesi</span></button>
+      </nav>
+    </header>
+
+    <main class="space-y-6 py-8 sm:py-10">
+      <section class="logduty-hero">
+        <div class="hero-orb hero-orb-one"></div>
+        <div class="hero-orb hero-orb-two"></div>
+        <div class="hero-content">
+          <div class="hero-eyebrow"><span class="live-dot"></span> DISCORD LOG MONITOR</div>
+          <h1 class="font-luxury">Rekap Mingguan <span>Log Duty</span></h1>
+          <p>Ringkasan otomatis aktivitas staff dari Discord. License/Steamhex adalah identitas utama—nama dan nickname yang berubah tetap tercatat dalam satu profil.</p>
+          <div class="hero-badges">
+            <span><i class="fa-brands fa-discord"></i> Sumber: Discord</span>
+            <span><i class="fa-solid fa-fingerprint"></i> Identitas: License</span>
+            <span><i class="fa-solid fa-calendar-week"></i> Periode: Mingguan</span>
+          </div>
+        </div>
+        <div class="hero-emblem" aria-hidden="true"><i class="fa-brands fa-discord"></i><span>969</span></div>
+      </section>
+
+      <section class="toolbar-panel">
+        <div class="toolbar-heading">
+          <span class="toolbar-icon"><i class="fa-solid fa-sliders"></i></span>
+          <span><strong>Filter laporan</strong><small>Pilih minggu dan cari identitas staff</small></span>
+        </div>
+        <form id="reportFilters" class="filter-controls">
+          <label class="week-field"><span>Minggu laporan</span><span class="input-wrap"><i class="fa-regular fa-calendar"></i><input id="selectedWeek" type="week" required></span></label>
+          <p id="weekRange" class="week-range"><i class="fa-solid fa-calendar-days"></i><span>Periode minggu akan tampil di sini</span></p>
+          <label class="search-field">
+            <span class="sr-only">Cari nama staff atau License</span>
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="searchStaff" type="search" placeholder="Cari nama player atau License...">
+            <kbd>/</kbd>
+          </label>
+          <button type="submit" class="apply-button"><i class="fa-solid fa-arrow-right-to-bracket"></i><span>Tampilkan</span></button>
+        </form>
+      </section>
+
+      <section class="metrics-grid" aria-label="Ringkasan jam duty">
+        <article class="metric-card metric-total">
+          <div class="metric-topline"><span>Total jam duty</span><span class="metric-icon"><i class="fa-regular fa-clock"></i></span></div>
+          <strong id="totalDuty">0:00</strong>
+          <small>Akumulasi durasi minggu terpilih</small>
+        </article>
+        <article class="metric-card metric-staff">
+          <div class="metric-topline"><span>Staff tercatat</span><span class="metric-icon"><i class="fa-solid fa-fingerprint"></i></span></div>
+          <strong id="staffCount">0</strong>
+          <small>License unik pada periode ini</small>
+        </article>
+        <article class="metric-card metric-shifts">
+          <div class="metric-topline"><span>Jumlah shift</span><span class="metric-icon"><i class="fa-solid fa-layer-group"></i></span></div>
+          <strong id="shiftCount">0</strong>
+          <small>Log selesai yang berhasil dibaca</small>
+        </article>
+      </section>
+
+      <section class="report-panel">
+        <div class="report-heading">
+          <div class="report-title-group">
+            <span class="report-icon"><i class="fa-solid fa-chart-column"></i></span>
+            <span><strong>Aktivitas per License</strong><small id="reportPeriod">Rekap khusus Discord. Absensi manual tidak termasuk.</small></span>
+          </div>
+          <div class="report-actions">
+            <span class="discord-source"><span class="live-dot"></span><i class="fa-brands fa-discord"></i> DISCORD ONLY</span>
+            <button id="refreshButton" type="button" class="refresh-button" aria-label="Muat ulang log Discord"><i class="fa-solid fa-arrows-rotate"></i></button>
+          </div>
+        </div>
+        <div class="report-status"><span class="status-indicator"></span><p id="loadStatus" role="status" aria-live="polite">Menyiapkan data...</p></div>
+        <div class="overflow-x-auto">
+          <table class="logduty-table w-full min-w-[860px] border-collapse text-left text-xs text-slate-300">
+            <thead>
+              <tr>
+                <th class="px-5 py-4">#</th>
+                <th class="player-column px-5 py-4">Nama player</th>
+                <th class="px-5 py-4">License / Steamhex</th>
+                <th class="px-5 py-4 text-center">Shift</th>
+                <th class="px-5 py-4 text-right">Total duty</th>
+                <th class="px-5 py-4">Terakhir duty</th>
+              </tr>
+            </thead>
+            <tbody id="reportBody">
+              <tr><td colspan="6" class="px-5 py-12 text-center text-slate-400">Memuat log Discord...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="report-footer">
+          <span><i class="fa-solid fa-shield-halved"></i> Data berasal dari channel duty Discord</span>
+          <span>Waktu diperbarui otomatis setiap 15 menit</span>
+        </div>
+      </section>
+      <p class="privacy-note"><i class="fa-solid fa-circle-info"></i><span>Nama hanya digunakan sebagai label. Rekap selalu dikelompokkan berdasarkan License/Steamhex dan tidak digabung dengan sistem absensi.</span></p>
+    </main>
+
+    <footer class="logduty-footer"><span>&copy; 2026 <strong>969 RESTO</strong></span><span>INTERNAL MANAGEMENT SYSTEM</span></footer>
+  </div>
+
+  <script type="module">
+    import { ensureAttendanceAdmin, getAttendanceSession, signOutAttendanceAdmin } from '../nhost/client.js';
+
+    const WORKER_URL = 'https://969resto-logduty.969resto-upload.workers.dev/api/weekly';
+    const reportBody = document.getElementById('reportBody');
+    const loadStatus = document.getElementById('loadStatus');
+    let reportGroups = [];
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[character]);
+    }
+
+    function formatDuration(minutes) {
+      const wholeMinutes = Math.floor(Number(minutes) || 0);
+      return `${Math.floor(wholeMinutes / 60)}:${String(wholeMinutes % 60).padStart(2, '0')}`;
+    }
+
+    function formatDate(value) {
+      if (!value) return '-';
+      return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(`${value}T00:00:00`));
+    }
+
+    function setLoadStatus(message, state = 'default') {
+      loadStatus.textContent = message;
+      loadStatus.dataset.state = state;
+    }
+
+    function getWeekRange(weekValue) {
+      const match = weekValue.match(/^(\d{4})-W(\d{2})$/);
+      if (!match) throw new Error('Pilih minggu yang valid.');
+      const year = Number(match[1]);
+      const week = Number(match[2]);
+      const januaryFourth = new Date(Date.UTC(year, 0, 4));
+      const weekday = januaryFourth.getUTCDay() || 7;
+      const monday = new Date(januaryFourth);
+      monday.setUTCDate(januaryFourth.getUTCDate() - weekday + 1 + (week - 1) * 7);
+      const thursday = new Date(monday);
+      thursday.setUTCDate(monday.getUTCDate() + 3);
+      if (thursday.getUTCFullYear() !== year || week < 1 || week > 53) throw new Error('Minggu ISO yang dipilih tidak valid.');
+      const sunday = new Date(monday);
+      sunday.setUTCDate(monday.getUTCDate() + 6);
+      return {
+        start: monday.toISOString().slice(0, 10),
+        end: sunday.toISOString().slice(0, 10)
+      };
+    }
+
+    function currentWeekValue(date = new Date()) {
+      const thursday = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      thursday.setUTCDate(thursday.getUTCDate() + 4 - (thursday.getUTCDay() || 7));
+      const year = thursday.getUTCFullYear();
+      const firstThursday = new Date(Date.UTC(year, 0, 4));
+      firstThursday.setUTCDate(firstThursday.getUTCDate() + 4 - (firstThursday.getUTCDay() || 7));
+      const week = 1 + Math.round((thursday - firstThursday) / (7 * 24 * 60 * 60 * 1000));
+      return `${year}-W${String(week).padStart(2, '0')}`;
+    }
+
+    function renderReport() {
+      const query = document.getElementById('searchStaff').value.trim().toLowerCase();
+      const visibleGroups = reportGroups.filter(group =>
+        `${group.name} ${group.license}`.toLowerCase().includes(query)
+      );
+      document.getElementById('totalDuty').textContent = formatDuration(reportGroups.reduce((total, group) => total + group.totalMinutes, 0));
+      document.getElementById('staffCount').textContent = reportGroups.length;
+      document.getElementById('shiftCount').textContent = reportGroups.reduce((total, group) => total + group.shiftCount, 0);
+      reportBody.innerHTML = visibleGroups.length ? visibleGroups.map((group, index) => `
+        <tr>
+          <td class="rank-cell px-5 py-4"><span>${String(index + 1).padStart(2, '0')}</span></td>
+          <td class="player-column px-5 py-4"><span class="player-cell"><span class="player-avatar">${escapeHtml(group.name.trim().split(/\s+/).slice(0, 2).map(part => part[0] || '').join('').toUpperCase())}</span><span class="player-name">${escapeHtml(group.name)}</span></span></td>
+          <td class="px-5 py-4"><span class="license-chip"><i class="fa-solid fa-fingerprint"></i>${escapeHtml(group.license)}</span></td>
+          <td class="px-5 py-4 text-center"><span class="shift-chip">${group.shiftCount}</span></td>
+          <td class="px-5 py-4 text-right"><span class="total-time">${formatDuration(group.totalMinutes)}</span></td>
+          <td class="px-5 py-4"><span class="last-duty"><i class="fa-regular fa-calendar-check"></i>${formatDate(group.lastDutyDate)}</span></td>
+        </tr>
+      `).join('') : `<tr><td colspan="6" class="empty-state"><span><i class="fa-solid ${reportGroups.length ? 'fa-magnifying-glass' : 'fa-inbox'}"></i></span><strong>${reportGroups.length ? 'Staff tidak ditemukan' : 'Belum ada log untuk minggu ini'}</strong><small>${reportGroups.length ? 'Coba kata pencarian lain.' : 'Log Discord yang selesai akan muncul di sini setelah sinkronisasi.'}</small></td></tr>`;
+    }
+
+    async function loadReport() {
+      const weekValue = document.getElementById('selectedWeek').value;
+      const { start: weekStart, end: weekEnd } = getWeekRange(weekValue);
+      const session = await getAttendanceSession();
+      if (!session?.accessToken) throw new Error('Sesi admin berakhir. Silakan masuk kembali.');
+      setLoadStatus('Memuat log Discord dan menyiapkan rekap minggu ini...', 'loading');
+      reportBody.innerHTML = '<tr><td colspan="6" class="px-5 py-12 text-center text-slate-400">Memuat log duty...</td></tr>';
+      document.getElementById('weekRange').textContent = `${formatDate(weekStart)} - ${formatDate(weekEnd)}`;
+      document.getElementById('reportPeriod').textContent = `Rekap khusus log Discord untuk ${formatDate(weekStart)} - ${formatDate(weekEnd)}. Data absensi manual tidak termasuk.`;
+
+      const response = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ weekStart })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Gagal memuat rangkuman (status ${response.status}).`);
+      if (!Array.isArray(result.staff)) throw new Error('Format rangkuman dari server tidak valid.');
+      reportGroups = result.staff.map(group => ({
+        license: String(group.license || ''),
+        name: String(group.name || ''),
+        shiftCount: Number(group.shiftCount) || 0,
+        totalMinutes: Number(group.totalMinutes) || 0,
+        lastDutyDate: String(group.lastDutyDate || '')
+      }));
+      renderReport();
+      const syncedAt = result.syncedAt ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(result.syncedAt)) : 'belum pernah';
+      const backfillStatus = result.backfillComplete ? 'Histori channel sudah selesai diproses.' : 'Histori lama masih diproses bertahap.';
+      const syncCount = result.syncResult ? ` ${result.syncResult.stored} log baru disimpan.` : '';
+      setLoadStatus(`Terakhir sinkron: ${syncedAt}. ${reportGroups.length} License ditemukan.${syncCount} ${backfillStatus}`, 'success');
+    }
+
+    async function refreshReport() {
+      try {
+        await loadReport();
+      } catch (error) {
+        reportGroups = [];
+        renderReport();
+        setLoadStatus(`Gagal memuat log: ${error.message}`, 'error');
+        reportBody.innerHTML = `<tr><td colspan="6" class="px-5 py-12 text-center text-rose-300">${escapeHtml(error.message)}</td></tr>`;
+      }
+    }
+
+    document.getElementById('reportFilters').addEventListener('submit', event => {
+      event.preventDefault();
+      refreshReport();
+    });
+    document.getElementById('searchStaff').addEventListener('input', renderReport);
+    document.getElementById('refreshButton').addEventListener('click', () => {
+      const icon = document.querySelector('#refreshButton i');
+      icon.classList.add('fa-spin');
+      refreshReport().finally(() => icon.classList.remove('fa-spin'));
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey
+        && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
+        event.preventDefault();
+        document.getElementById('searchStaff').focus();
+      }
+    });
+    document.getElementById('logoutButton').addEventListener('click', async () => {
+      await signOutAttendanceAdmin();
+      window.location.reload();
+    });
+
+    if (await ensureAttendanceAdmin()) {
+      document.getElementById('selectedWeek').value = currentWeekValue();
+      refreshReport();
+    }
+  </script>
+</body>
+</html>

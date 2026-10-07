@@ -1,0 +1,14 @@
+name = "969resto-logduty"
+main = "src/index.ts"
+compatibility_date = "2026-10-07"
+
+[vars]
+DUTY_TIMEZONE_OFFSET_MINUTES = "420"
+
+[[d1_databases]]
+binding = "DUTY_DB"
+database_name = "969resto-logduty"
+database_id = "a2a3ac8c-20c3-4123-8d06-f1685cacba34"
+
+[triggers]
+crons = ["*/15 * * * *"]
