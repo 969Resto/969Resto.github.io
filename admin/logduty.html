@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="index.css" />
   <link rel="stylesheet" href="logduty.css" />
 </head>
@@ -90,6 +91,7 @@
           </div>
           <div class="report-actions">
             <span class="discord-source"><span class="live-dot"></span><i class="fa-brands fa-discord"></i> DISCORD ONLY</span>
+            <button id="saveHistoryButton" type="button" class="save-history-button" disabled><i class="fa-regular fa-bookmark"></i><span>Simpan History</span></button>
             <button id="refreshButton" type="button" class="refresh-button" aria-label="Muat ulang log Discord"><i class="fa-solid fa-arrows-rotate"></i></button>
           </div>
         </div>
@@ -116,19 +118,71 @@
           <span>Waktu diperbarui otomatis setiap 15 menit</span>
         </div>
       </section>
+
+      <section class="report-panel history-panel" aria-labelledby="historyTitle">
+        <div class="history-heading">
+          <div class="report-title-group">
+            <span class="report-icon"><i class="fa-solid fa-box-archive"></i></span>
+            <span><strong id="historyTitle">History Log Duty</strong><small>Snapshot mingguan yang sudah disimpan</small></span>
+          </div>
+          <p id="historyStatus" role="status" aria-live="polite">Memuat history...</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="logduty-table history-table w-full min-w-[680px] border-collapse text-left text-xs text-slate-300">
+            <thead>
+              <tr>
+                <th class="px-5 py-4">Periode minggu</th>
+                <th class="px-5 py-4 text-center">Staff</th>
+                <th class="px-5 py-4 text-center">Shift</th>
+                <th class="px-5 py-4 text-right">Total duty</th>
+                <th class="px-5 py-4">Disimpan</th>
+                <th class="px-5 py-4 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody">
+              <tr><td colspan="6" class="px-5 py-8 text-center text-slate-400">Memuat history...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
       <p class="privacy-note"><i class="fa-solid fa-circle-info"></i><span>Nama hanya digunakan sebagai label. Rekap selalu dikelompokkan berdasarkan License/Steamhex dan tidak digabung dengan sistem absensi.</span></p>
     </main>
 
     <footer class="logduty-footer"><span>&copy; 2026 <strong>969 RESTO</strong></span><span>INTERNAL MANAGEMENT SYSTEM</span></footer>
   </div>
 
+  <div id="deleteHistoryModal" class="history-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="deleteHistoryTitle" aria-describedby="deleteHistoryMessage">
+    <div class="history-confirm-dialog">
+      <div class="history-confirm-content">
+        <span class="history-confirm-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+        <div>
+          <h2 id="deleteHistoryTitle">Hapus History Log Duty?</h2>
+          <p id="deleteHistoryMessage"></p>
+        </div>
+        <button id="closeDeleteHistoryModal" class="history-confirm-close" type="button" aria-label="Tutup konfirmasi"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="history-confirm-actions">
+        <button id="cancelDeleteHistory" class="history-confirm-cancel" type="button">Batal</button>
+        <button id="confirmDeleteHistory" class="history-confirm-submit" type="button"><i class="fa-solid fa-trash"></i><span>Ya, Hapus</span></button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { ensureAttendanceAdmin, getAttendanceSession, signOutAttendanceAdmin } from '../nhost/client.js';
 
     const WORKER_URL = 'https://969resto-logduty.969resto-upload.workers.dev/api/weekly';
+    const SUPABASE_URL = 'https://rdnhbqufxidbdwmxxabf.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_e1eww7RhRX3_l95kwvyM4Q_LysMicKv';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const reportBody = document.getElementById('reportBody');
     const loadStatus = document.getElementById('loadStatus');
+    const historyBody = document.getElementById('historyBody');
+    const saveHistoryButton = document.getElementById('saveHistoryButton');
     let reportGroups = [];
+    let reportReady = false;
+    let deleteHistoryResolver = null;
+    let deleteHistoryTrigger = null;
 
     function escapeHtml(value) {
       return String(value ?? '').replace(/[&<>"']/g, character => ({
@@ -146,9 +200,50 @@
       return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(`${value}T00:00:00`));
     }
 
+    function formatDateTime(value) {
+      if (!value) return '-';
+      const date = new Date(value);
+      return Number.isNaN(date.getTime())
+        ? '-'
+        : new Intl.DateTimeFormat('id-ID', { dateStyle: 'short', timeStyle: 'short' }).format(date);
+    }
+
+    function mapReportGroups(groups) {
+      return groups.map(group => ({
+        license: String(group.license || ''),
+        name: String(group.name || ''),
+        shiftCount: Number(group.shiftCount) || 0,
+        totalMinutes: Number(group.totalMinutes) || 0,
+        lastDutyDate: String(group.lastDutyDate || '')
+      }));
+    }
+
     function setLoadStatus(message, state = 'default') {
       loadStatus.textContent = message;
       loadStatus.dataset.state = state;
+    }
+
+    function confirmHistoryDelete(weekStart, trigger) {
+      deleteHistoryTrigger = trigger;
+      document.getElementById('deleteHistoryMessage').textContent =
+        `History minggu ${formatDate(weekStart)} akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`;
+      const modal = document.getElementById('deleteHistoryModal');
+      modal.classList.add('is-open');
+      document.body.classList.add('history-confirm-open');
+      document.getElementById('cancelDeleteHistory').focus();
+      return new Promise(resolve => {
+        deleteHistoryResolver = resolve;
+      });
+    }
+
+    function closeHistoryDelete(confirmed) {
+      const modal = document.getElementById('deleteHistoryModal');
+      modal.classList.remove('is-open');
+      document.body.classList.remove('history-confirm-open');
+      if (deleteHistoryResolver) deleteHistoryResolver(confirmed);
+      deleteHistoryResolver = null;
+      deleteHistoryTrigger?.focus();
+      deleteHistoryTrigger = null;
     }
 
     function getWeekRange(weekValue) {
@@ -202,6 +297,8 @@
     }
 
     async function loadReport() {
+      reportReady = false;
+      saveHistoryButton.disabled = true;
       const weekValue = document.getElementById('selectedWeek').value;
       const { start: weekStart, end: weekEnd } = getWeekRange(weekValue);
       const session = await getAttendanceSession();
@@ -222,13 +319,9 @@
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || `Gagal memuat rangkuman (status ${response.status}).`);
       if (!Array.isArray(result.staff)) throw new Error('Format rangkuman dari server tidak valid.');
-      reportGroups = result.staff.map(group => ({
-        license: String(group.license || ''),
-        name: String(group.name || ''),
-        shiftCount: Number(group.shiftCount) || 0,
-        totalMinutes: Number(group.totalMinutes) || 0,
-        lastDutyDate: String(group.lastDutyDate || '')
-      }));
+      reportGroups = mapReportGroups(result.staff);
+      reportReady = true;
+      saveHistoryButton.disabled = false;
       renderReport();
       const syncedAt = result.syncedAt ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(result.syncedAt)) : 'belum pernah';
       const backfillStatus = result.backfillComplete ? 'Histori channel sudah selesai diproses.' : 'Histori lama masih diproses bertahap.';
@@ -241,9 +334,69 @@
         await loadReport();
       } catch (error) {
         reportGroups = [];
+        reportReady = false;
+        saveHistoryButton.disabled = true;
         renderReport();
         setLoadStatus(`Gagal memuat log: ${error.message}`, 'error');
         reportBody.innerHTML = `<tr><td colspan="6" class="px-5 py-12 text-center text-rose-300">${escapeHtml(error.message)}</td></tr>`;
+      }
+    }
+
+    async function refreshHistory() {
+      document.getElementById('historyStatus').textContent = 'Memuat daftar history...';
+      try {
+        const { data: history, error } = await supabaseClient
+          .from('logduty_weekly_history')
+          .select('week_start, week_end, staff_count, shift_count, total_minutes, saved_at')
+          .order('week_start', { ascending: false });
+        if (error) throw error;
+        if (!Array.isArray(history)) throw new Error('Format daftar history dari Supabase tidak valid.');
+        historyBody.innerHTML = history.length ? history.map(item => `
+          <tr>
+            <td class="px-5 py-4">${escapeHtml(formatDate(item.week_start))} - ${escapeHtml(formatDate(item.week_end))}</td>
+            <td class="px-5 py-4 text-center">${Number(item.staff_count) || 0}</td>
+            <td class="px-5 py-4 text-center">${Number(item.shift_count) || 0}</td>
+            <td class="px-5 py-4 text-right"><span class="total-time">${formatDuration(item.total_minutes)}</span></td>
+            <td class="px-5 py-4">${escapeHtml(formatDateTime(item.saved_at))}</td>
+            <td class="history-actions-cell px-5 py-4 text-right">
+              <a class="history-open-button" href="logduty-history.html?week_start=${encodeURIComponent(item.week_start)}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>Buka</span></a>
+              <button class="history-delete-button" type="button" data-delete-week-start="${escapeHtml(item.week_start)}" aria-label="Hapus history ${escapeHtml(formatDate(item.week_start))}"><i class="fa-solid fa-trash"></i><span>Hapus</span></button>
+            </td>
+          </tr>
+        `).join('') : '<tr><td colspan="6" class="empty-state"><strong>Belum ada history tersimpan</strong><small>Simpan rekap minggu ini untuk mulai membuat history.</small></td></tr>';
+        document.getElementById('historyStatus').textContent = `${history.length} snapshot tersimpan di Supabase`;
+      } catch (error) {
+        historyBody.innerHTML = `<tr><td colspan="6" class="px-5 py-8 text-center text-rose-300">${escapeHtml(error.message)}</td></tr>`;
+        document.getElementById('historyStatus').textContent = `Gagal memuat history: ${error.message}`;
+      }
+    }
+
+    async function saveHistory() {
+      if (!reportReady || saveHistoryButton.disabled) return;
+      const weekStart = getWeekRange(document.getElementById('selectedWeek').value).start;
+      saveHistoryButton.disabled = true;
+      saveHistoryButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Menyimpan...</span>';
+      try {
+        const weekEnd = getWeekRange(document.getElementById('selectedWeek').value).end;
+        const shiftCount = reportGroups.reduce((total, group) => total + group.shiftCount, 0);
+        const totalMinutes = reportGroups.reduce((total, group) => total + group.totalMinutes, 0);
+        const { error } = await supabaseClient.from('logduty_weekly_history').upsert({
+          week_start: weekStart,
+          week_end: weekEnd,
+          staff_count: reportGroups.length,
+          shift_count: shiftCount,
+          total_minutes: totalMinutes,
+          staff: reportGroups,
+          saved_at: new Date().toISOString()
+        }, { onConflict: 'week_start' });
+        if (error) throw error;
+        setLoadStatus(`History minggu ${formatDate(weekStart)} - ${formatDate(weekEnd)} berhasil disimpan ke Supabase.`, 'success');
+        await refreshHistory();
+      } catch (error) {
+        setLoadStatus(`Gagal menyimpan history: ${error.message}`, 'error');
+      } finally {
+        saveHistoryButton.innerHTML = '<i class="fa-regular fa-bookmark"></i><span>Simpan History</span>';
+        saveHistoryButton.disabled = !reportReady;
       }
     }
 
@@ -257,7 +410,39 @@
       icon.classList.add('fa-spin');
       refreshReport().finally(() => icon.classList.remove('fa-spin'));
     });
+    saveHistoryButton.addEventListener('click', saveHistory);
+    historyBody.addEventListener('click', async event => {
+      const button = event.target.closest('[data-delete-week-start]');
+      if (!button) return;
+      const weekStart = button.dataset.deleteWeekStart;
+      if (!await confirmHistoryDelete(weekStart, button)) return;
+
+      button.disabled = true;
+      document.getElementById('historyStatus').textContent = 'Menghapus history...';
+      try {
+        const { error } = await supabaseClient
+          .from('logduty_weekly_history')
+          .delete()
+          .eq('week_start', weekStart);
+        if (error) throw error;
+        await refreshHistory();
+        document.getElementById('historyStatus').textContent = `History minggu ${formatDate(weekStart)} berhasil dihapus.`;
+      } catch (error) {
+        document.getElementById('historyStatus').textContent = `Gagal menghapus history: ${error.message}`;
+        button.disabled = false;
+      }
+    });
+    document.getElementById('confirmDeleteHistory').addEventListener('click', () => closeHistoryDelete(true));
+    document.getElementById('cancelDeleteHistory').addEventListener('click', () => closeHistoryDelete(false));
+    document.getElementById('closeDeleteHistoryModal').addEventListener('click', () => closeHistoryDelete(false));
+    document.getElementById('deleteHistoryModal').addEventListener('click', event => {
+      if (event.target.id === 'deleteHistoryModal') closeHistoryDelete(false);
+    });
     document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && deleteHistoryResolver) {
+        closeHistoryDelete(false);
+        return;
+      }
       if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey
         && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
         event.preventDefault();
@@ -272,6 +457,7 @@
     if (await ensureAttendanceAdmin()) {
       document.getElementById('selectedWeek').value = currentWeekValue();
       refreshReport();
+      refreshHistory();
     }
   </script>
 </body>

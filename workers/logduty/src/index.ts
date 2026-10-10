@@ -313,6 +313,30 @@ async function verifyNhostAdmin(authorization: string) {
   return !result.errors?.length && Array.isArray(result.data?.attendance_weekly_recaps);
 }
 
+async function getWeeklyStaff(env: Env, range: { start: string; end: string }) {
+  const rows = await env.DUTY_DB.prepare(`
+    SELECT
+      MAX(trim(license)) AS license,
+      COUNT(*) AS shiftCount,
+      SUM(shift_minutes) AS totalMinutes,
+      MAX(duty_date) AS lastDutyDate,
+      (SELECT newest.staff_name FROM duty_logs AS newest
+        WHERE lower(trim(newest.license)) = lower(trim(duty_logs.license))
+          AND newest.duty_date BETWEEN ? AND ?
+        ORDER BY newest.duty_start DESC LIMIT 1) AS name,
+      (SELECT newest.discord_id FROM duty_logs AS newest
+        WHERE lower(trim(newest.license)) = lower(trim(duty_logs.license))
+          AND newest.duty_date BETWEEN ? AND ?
+        ORDER BY newest.duty_start DESC LIMIT 1) AS discordId
+    FROM duty_logs
+    WHERE duty_date BETWEEN ? AND ?
+    GROUP BY lower(trim(license))
+    ORDER BY totalMinutes DESC, license COLLATE NOCASE
+  `).bind(range.start, range.end, range.start, range.end, range.start, range.end).all<Omit<DutyGroup, "identity_key">>();
+  if (!rows.success) throw new Error("Gagal membaca rekap mingguan dari database Discord.");
+  return rows.results || [];
+}
+
 function getWeekBounds(value: unknown) {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
   const start = new Date(`${value}T00:00:00.000Z`);
@@ -333,37 +357,13 @@ async function loadWeeklyReport(request: Request, env: Env) {
   if (!range) return { status: 400, body: { error: "Pilih minggu ISO penuh yang dimulai pada hari Senin." } };
 
   const syncResult = await syncDiscordHistory(env);
-  const rows = await env.DUTY_DB.prepare(`
-    SELECT
-      lower(trim(license)) AS identity_key,
-      MAX(trim(license)) AS license,
-      COUNT(*) AS shiftCount,
-      SUM(shift_minutes) AS totalMinutes,
-      MAX(duty_date) AS lastDutyDate,
-      (SELECT newest.staff_name FROM duty_logs AS newest
-        WHERE lower(trim(newest.license)) = lower(trim(duty_logs.license))
-          AND newest.duty_date BETWEEN ? AND ?
-        ORDER BY newest.duty_start DESC LIMIT 1) AS name,
-      (SELECT newest.staff_name FROM duty_logs AS newest
-        WHERE lower(trim(newest.license)) = lower(trim(duty_logs.license))
-          AND newest.duty_date BETWEEN ? AND ?
-        ORDER BY newest.duty_start DESC LIMIT 1) AS name,
-      (SELECT newest.discord_id FROM duty_logs AS newest
-        WHERE lower(trim(newest.license)) = lower(trim(duty_logs.license))
-          AND newest.duty_date BETWEEN ? AND ?
-        ORDER BY newest.duty_start DESC LIMIT 1) AS discordId
-    FROM duty_logs
-    WHERE duty_date BETWEEN ? AND ?
-    GROUP BY lower(trim(license))
-    ORDER BY totalMinutes DESC, license COLLATE NOCASE
-  `).bind(range.start, range.end, range.start, range.end, range.start, range.end).all<Omit<DutyGroup, "identity_key">>();
-  if (!rows.success) throw new Error("Gagal membaca rekap mingguan dari database Discord.");
+  const staff = await getWeeklyStaff(env, range);
 
   const backfill = await getState(env.DUTY_DB, "backfill_complete");
   return {
     status: 200,
     body: {
-      staff: rows.results || [],
+      staff,
       weekStart: range.start,
       weekEnd: range.end,
       syncedAt: new Date().toISOString(),
@@ -399,8 +399,8 @@ const worker = {
       const result = await loadWeeklyReport(request, env);
       return jsonResponse(result.body, result.status, origin);
     } catch (error) {
-      console.error("Gagal membaca rekap Log Duty:", error);
-      return jsonResponse({ error: error instanceof Error ? error.message : "Gagal memuat Log Duty." }, 500, origin);
+      console.error("Gagal memproses Log Duty:", error);
+      return jsonResponse({ error: error instanceof Error ? error.message : "Gagal memproses Log Duty." }, 500, origin);
     }
   },
 

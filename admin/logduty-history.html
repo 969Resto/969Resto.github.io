@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>969 Resto - History Log Duty</title>
+  <link rel="icon" type="image/png" href="../Invoice/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="index.css" />
+  <link rel="stylesheet" href="logduty.css" />
+</head>
+<body class="logduty-page min-h-screen p-4 sm:p-6 md:p-8">
+  <div class="logduty-shell mx-auto w-full max-w-7xl">
+    <header class="logduty-topbar flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <a href="./" class="brand-lockup flex items-center gap-3" aria-label="Kembali ke dashboard management">
+        <span class="brand-mark"><img src="../Invoice/logo.png" alt="" onerror="this.style.display='none'"><i class="fa-solid fa-utensils"></i></span>
+        <span>
+          <strong class="font-luxury">969 RESTO</strong>
+          <span>MANAGEMENT SYSTEM <i class="fa-solid fa-circle text-[5px]"></i> DUTY HISTORY</span>
+        </span>
+      </a>
+      <nav class="flex flex-wrap items-center gap-2" aria-label="Navigasi halaman">
+        <a href="logduty.html" class="topbar-link"><i class="fa-solid fa-arrow-left"></i><span>Kembali ke Log Duty</span></a>
+        <button id="logoutButton" type="button" class="topbar-link logout-link"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Kunci Sesi</span></button>
+      </nav>
+    </header>
+
+    <main class="space-y-6 py-8 sm:py-10">
+      <section class="logduty-hero">
+        <div class="hero-orb hero-orb-one"></div>
+        <div class="hero-orb hero-orb-two"></div>
+        <div class="hero-content">
+          <div class="hero-eyebrow"><span class="live-dot"></span> SNAPSHOT TERSIMPAN</div>
+          <h1 class="font-luxury">History <span>Log Duty</span></h1>
+          <p id="historyPeriod">Memuat snapshot mingguan dari Supabase...</p>
+          <div class="hero-badges">
+            <span><i class="fa-brands fa-discord"></i> Sumber: Discord</span>
+            <span><i class="fa-solid fa-fingerprint"></i> Identitas: License</span>
+            <span><i class="fa-solid fa-box-archive"></i> Snapshot tersimpan</span>
+          </div>
+        </div>
+        <div class="hero-emblem" aria-hidden="true"><i class="fa-solid fa-box-archive"></i><span>969</span></div>
+      </section>
+
+      <section class="metrics-grid" aria-label="Ringkasan jam duty">
+        <article class="metric-card metric-total">
+          <div class="metric-topline"><span>Total jam duty</span><span class="metric-icon"><i class="fa-regular fa-clock"></i></span></div>
+          <strong id="totalDuty">0:00</strong>
+          <small>Total durasi pada snapshot ini</small>
+        </article>
+        <article class="metric-card metric-staff">
+          <div class="metric-topline"><span>Staff tercatat</span><span class="metric-icon"><i class="fa-solid fa-fingerprint"></i></span></div>
+          <strong id="staffCount">0</strong>
+          <small>License unik pada periode ini</small>
+        </article>
+        <article class="metric-card metric-shifts">
+          <div class="metric-topline"><span>Jumlah shift</span><span class="metric-icon"><i class="fa-solid fa-layer-group"></i></span></div>
+          <strong id="shiftCount">0</strong>
+          <small>Shift yang tersimpan pada snapshot</small>
+        </article>
+      </section>
+
+      <section class="report-panel">
+        <div class="report-heading">
+          <div class="report-title-group">
+            <span class="report-icon"><i class="fa-solid fa-chart-column"></i></span>
+            <span><strong>Aktivitas per License</strong><small id="savedAt">Snapshot history Log Duty</small></span>
+          </div>
+          <span class="discord-source"><span class="live-dot"></span><i class="fa-brands fa-discord"></i> DISCORD ONLY</span>
+        </div>
+        <div class="report-status"><span class="status-indicator"></span><p id="loadStatus" role="status" aria-live="polite">Memuat snapshot...</p></div>
+        <div class="overflow-x-auto">
+          <table class="logduty-table w-full min-w-[860px] border-collapse text-left text-xs text-slate-300">
+            <thead>
+              <tr>
+                <th class="px-5 py-4">#</th>
+                <th class="player-column px-5 py-4">Nama player</th>
+                <th class="px-5 py-4">License / Steamhex</th>
+                <th class="px-5 py-4 text-center">Shift</th>
+                <th class="px-5 py-4 text-right">Total duty</th>
+                <th class="px-5 py-4">Terakhir duty</th>
+              </tr>
+            </thead>
+            <tbody id="reportBody">
+              <tr><td colspan="6" class="px-5 py-12 text-center text-slate-400">Memuat snapshot...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="report-footer">
+          <span><i class="fa-solid fa-shield-halved"></i> Data berasal dari snapshot Supabase</span>
+          <span>Snapshot tidak mengubah rekap Log Duty aktif</span>
+        </div>
+      </section>
+    </main>
+    <footer class="logduty-footer"><span>&copy; 2026 <strong>969 RESTO</strong></span><span>INTERNAL MANAGEMENT SYSTEM</span></footer>
+  </div>
+
+  <script type="module">
+    import { ensureAttendanceAdmin, signOutAttendanceAdmin } from '../nhost/client.js';
+
+    const SUPABASE_URL = 'https://rdnhbqufxidbdwmxxabf.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_e1eww7RhRX3_l95kwvyM4Q_LysMicKv';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const reportBody = document.getElementById('reportBody');
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[character]);
+    }
+
+    function formatDuration(minutes) {
+      const wholeMinutes = Math.floor(Number(minutes) || 0);
+      return `${Math.floor(wholeMinutes / 60)}:${String(wholeMinutes % 60).padStart(2, '0')}`;
+    }
+
+    function formatDate(value) {
+      if (!value) return '-';
+      return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+        .format(new Date(`${value}T00:00:00`));
+    }
+
+    function formatDateTime(value) {
+      const date = new Date(value);
+      if (!value || Number.isNaN(date.getTime())) return '-';
+      return new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+    }
+
+    function renderSnapshot(staff) {
+      const groups = staff.map(group => ({
+        license: String(group.license || ''),
+        name: String(group.name || ''),
+        shiftCount: Number(group.shiftCount) || 0,
+        totalMinutes: Number(group.totalMinutes) || 0,
+        lastDutyDate: String(group.lastDutyDate || '')
+      }));
+      document.getElementById('totalDuty').textContent = formatDuration(groups.reduce((total, group) => total + group.totalMinutes, 0));
+      document.getElementById('staffCount').textContent = groups.length;
+      document.getElementById('shiftCount').textContent = groups.reduce((total, group) => total + group.shiftCount, 0);
+      reportBody.innerHTML = groups.length ? groups.map((group, index) => `
+        <tr>
+          <td class="rank-cell px-5 py-4"><span>${String(index + 1).padStart(2, '0')}</span></td>
+          <td class="player-column px-5 py-4"><span class="player-cell"><span class="player-avatar">${escapeHtml(group.name.trim().split(/\s+/).slice(0, 2).map(part => part[0] || '').join('').toUpperCase())}</span><span class="player-name">${escapeHtml(group.name)}</span></span></td>
+          <td class="px-5 py-4"><span class="license-chip"><i class="fa-solid fa-fingerprint"></i>${escapeHtml(group.license)}</span></td>
+          <td class="px-5 py-4 text-center"><span class="shift-chip">${group.shiftCount}</span></td>
+          <td class="px-5 py-4 text-right"><span class="total-time">${formatDuration(group.totalMinutes)}</span></td>
+          <td class="px-5 py-4"><span class="last-duty"><i class="fa-regular fa-calendar-check"></i>${formatDate(group.lastDutyDate)}</span></td>
+        </tr>
+      `).join('') : '<tr><td colspan="6" class="empty-state"><strong>Tidak ada log pada snapshot ini</strong><small>Snapshot tersimpan tanpa aktivitas staff.</small></td></tr>';
+    }
+
+    async function loadSnapshot() {
+      const weekStart = new URLSearchParams(window.location.search).get('week_start');
+      if (!weekStart || !/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) {
+        throw new Error('Periode history tidak valid.');
+      }
+      const { data: snapshot, error } = await supabaseClient
+        .from('logduty_weekly_history')
+        .select('week_start, week_end, staff_count, shift_count, total_minutes, staff, saved_at')
+        .eq('week_start', weekStart)
+        .maybeSingle();
+      if (error) throw error;
+      if (!snapshot) throw new Error('Snapshot history untuk periode tersebut tidak ditemukan.');
+      if (!Array.isArray(snapshot.staff)) throw new Error('Format data snapshot history tidak valid.');
+
+      document.getElementById('historyPeriod').textContent = `Rekap khusus log Discord untuk ${formatDate(snapshot.week_start)} - ${formatDate(snapshot.week_end)}. Data absensi manual tidak termasuk.`;
+      document.getElementById('savedAt').textContent = `Disimpan ${formatDateTime(snapshot.saved_at)}`;
+      renderSnapshot(snapshot.staff);
+      document.getElementById('loadStatus').textContent = `Snapshot berhasil dimuat dari Supabase. ${snapshot.staff_count} License tercatat.`;
+      document.getElementById('loadStatus').dataset.state = 'success';
+    }
+
+    document.getElementById('logoutButton').addEventListener('click', async () => {
+      await signOutAttendanceAdmin();
+      window.location.reload();
+    });
+
+    if (await ensureAttendanceAdmin()) {
+      try {
+        await loadSnapshot();
+      } catch (error) {
+        document.getElementById('loadStatus').textContent = `Gagal memuat history: ${error.message}`;
+        document.getElementById('loadStatus').dataset.state = 'error';
+        reportBody.innerHTML = `<tr><td colspan="6" class="px-5 py-12 text-center text-rose-300">${escapeHtml(error.message)}</td></tr>`;
+      }
+    }
+  </script>
+</body>
+</html>
