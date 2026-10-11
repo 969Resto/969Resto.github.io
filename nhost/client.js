@@ -1,10 +1,14 @@
 import { createNhostClient } from 'https://esm.sh/@nhost/nhost-js@3';
 
 const GRAPHQL_URL = 'https://xqjnbwhipztjcbcnmzam.graphql.ap-southeast-1.nhost.run/v1';
+const AUTH_HEALTH_URL = 'https://xqjnbwhipztjcbcnmzam.auth.ap-southeast-1.nhost.run/v1/healthz';
 const nhost = createNhostClient({
   subdomain: 'xqjnbwhipztjcbcnmzam',
   region: 'ap-southeast-1'
 });
+
+fetch(AUTH_HEALTH_URL, { mode: 'no-cors', cache: 'no-store' })
+  .catch(error => console.warn('Nhost auth warm-up failed:', error));
 
 export async function waitForNhost() {
   await nhost.auth.waitUntilReady();

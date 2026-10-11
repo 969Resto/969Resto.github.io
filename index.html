@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>969 Resto - Official Portal</title>
   <link rel="icon" type="image/png" href="Invoice/logo.png" />
+  <link rel="preconnect" href="https://xqjnbwhipztjcbcnmzam.auth.ap-southeast-1.nhost.run" crossorigin />
 
 
   <!-- Google Fonts: Cinzel & Plus Jakarta Sans -->
@@ -111,6 +112,10 @@
     const SUPABASE_URL = "https://rdnhbqufxidbdwmxxabf.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_e1eww7RhRX3_l95kwvyM4Q_LysMicKv";
     const HEARTBEAT_TABLE = "heartbeat";
+    const NHOST_AUTH_HEALTH_URL = "https://xqjnbwhipztjcbcnmzam.auth.ap-southeast-1.nhost.run/v1/healthz";
+
+    fetch(NHOST_AUTH_HEALTH_URL, { mode: "no-cors", cache: "no-store" })
+      .catch(error => console.warn("Nhost auth warm-up failed:", error));
 
     async function keepProjectWarm() {
       try {
