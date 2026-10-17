@@ -4,6 +4,12 @@ The attendance page uses Nhost for shift rows and weekly recap archives. Browser
 
 - `attendance_shifts` stores each staff member's manually entered shift, with a staff ID/name/role snapshot because staff data remains in Supabase.
 - `attendance_weekly_recaps` stores one JSON recap per Monday-starting week.
+- Saving a recap again for the same week preserves the saved name, role, and note for each matching staff ID, so later roster updates do not rename historical entries.
+- The attendance roster snapshot is shared through Supabase `staff_metadata`, so a roster refreshed by an admin is available on other devices without automatically replacing it from the live staff table.
+
+## Shared Attendance Staff Roster
+
+Run `supabase/migrations/20261017_attendance_staff_snapshot.sql` in the Supabase SQL editor. The migration adds the shared roster snapshot column and read/write policies. After the migration, an admin can press **Perbarui Staff** on the attendance page to publish the current active staff roster online. Other devices load that saved roster when opening the page. Until the migration is applied and an admin performs the first refresh, an existing local snapshot is used only as a device-local fallback.
 
 ## Database and Permissions
 

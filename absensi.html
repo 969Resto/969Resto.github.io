@@ -153,7 +153,7 @@
           <p class="mt-2 text-[11px] text-slate-500">Absensi hanya menyimpan minggu berjalan. Minggu lampau otomatis masuk ke Riwayat Rekap lalu dihapus dari absensi aktif.</p>
         </div>
         <div class="flex flex-col gap-3 border-b border-amber-900/30 pb-5 sm:flex-row sm:items-center sm:justify-between">
-          <p id="staffSnapshotStatus" class="text-xs text-slate-400">Memuat roster staff terbaru dari Supabase...</p>
+          <p id="staffSnapshotStatus" class="text-xs text-slate-400">Memuat roster staff terakhir yang diperbarui admin...</p>
           <div class="flex flex-wrap gap-2">
             <button id="refreshStaff" type="button" class="whitespace-nowrap rounded-lg border border-amber-500/40 bg-amber-950/40 px-4 py-2.5 text-xs font-semibold text-amber-200 transition hover:bg-amber-900/50"><i class="fa-solid fa-rotate mr-1"></i>Perbarui Staff</button>
             <button id="logoutAdmin" type="button" class="whitespace-nowrap rounded-lg border border-rose-500/40 bg-rose-950/30 px-4 py-2.5 text-xs font-semibold text-rose-200 transition hover:bg-rose-900/40"><i class="fa-solid fa-right-from-bracket mr-1"></i>Keluar Admin</button>
@@ -608,6 +608,68 @@
       loadWeekDrafts(today);
     }
 
+    function saveLocalStaffSnapshot(snapshot) {
+      try {
+        localStorage.setItem(STAFF_SNAPSHOT_KEY, JSON.stringify(snapshot));
+      } catch (error) {
+        console.warn('Snapshot staff absensi tidak dapat disimpan di perangkat ini:', error);
+      }
+    }
+
+    function renderCurrentStaffSnapshot() {
+      if (weekDates.length) {
+        renderAttendance();
+      } else {
+        initializeAttendanceWeek();
+      }
+    }
+
+    async function loadStaffSnapshot() {
+      const status = document.getElementById('staffSnapshotStatus');
+      try {
+        const savedRoster = localStorage.getItem(STAFF_SNAPSHOT_KEY);
+        if (savedRoster !== null) {
+          const snapshot = JSON.parse(savedRoster);
+          if (!Array.isArray(snapshot)) throw new Error('Format snapshot roster lokal tidak valid.');
+          staffList = sortStaff(snapshot);
+          status.textContent = `Memuat roster staff terakhir yang diperbarui admin (${staffList.length} staff)...`;
+          renderCurrentStaffSnapshot();
+        }
+      } catch (error) {
+        console.warn('Snapshot roster lokal gagal dimuat:', error);
+        status.textContent = `Snapshot roster lokal gagal dimuat: ${error.message}`;
+      }
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('staff_metadata')
+          .select('staff_snapshot')
+          .eq('key', 'attendance_staff_snapshot')
+          .maybeSingle();
+        if (error) throw error;
+
+        if (data?.staff_snapshot !== null && data?.staff_snapshot !== undefined) {
+          if (!Array.isArray(data.staff_snapshot)) throw new Error('Format snapshot roster online tidak valid.');
+          staffList = sortStaff(data.staff_snapshot);
+          saveLocalStaffSnapshot(staffList);
+          status.textContent = `Roster bersama online dimuat (${staffList.length} staff).`;
+          renderCurrentStaffSnapshot();
+        } else if (staffList.length) {
+          status.textContent = `Menggunakan roster lokal (${staffList.length} staff). Tekan Perbarui Staff untuk membagikan roster online.`;
+        } else {
+          status.textContent = 'Belum ada roster tersimpan. Admin perlu menekan Perbarui Staff untuk memuat data.';
+          renderCurrentStaffSnapshot();
+        }
+      } catch (error) {
+        console.warn('Snapshot roster online gagal dimuat:', error);
+        status.textContent = staffList.length
+          ? `Roster online tidak dapat dimuat; memakai cache lokal (${staffList.length} staff). ${error.message}`
+          : `Gagal memuat snapshot roster online: ${error.message}`;
+        document.getElementById('adminStatus').textContent = `Roster bersama online belum dapat dimuat: ${error.message}`;
+        if (!weekDates.length) renderCurrentStaffSnapshot();
+      }
+    }
+
     async function loadStaff() {
       const refreshButton = document.getElementById('refreshStaff');
       refreshButton.disabled = true;
@@ -620,37 +682,34 @@
           .order('created_at', { ascending: true });
         if (error) throw error;
 
-        staffList = sortStaff(data);
-        try {
-          localStorage.setItem(STAFF_SNAPSHOT_KEY, JSON.stringify(staffList));
-        } catch (storageError) {
-          console.warn('Snapshot staff absensi tidak dapat disimpan:', storageError);
-        }
-        document.getElementById('staffSnapshotStatus').textContent = `Roster staff terbaru dimuat dari Supabase (${staffList.length} staff).`;
+        const nextStaffList = sortStaff(data);
+        const { error: snapshotError } = await supabaseClient
+          .from('staff_metadata')
+          .upsert({
+            key: 'attendance_staff_snapshot',
+            staff_snapshot: nextStaffList,
+            updated_at: new Date().toISOString()
+          });
+        if (snapshotError) throw snapshotError;
+
+        staffList = nextStaffList;
+        saveLocalStaffSnapshot(staffList);
+        document.getElementById('staffSnapshotStatus').textContent = `Roster bersama online diperbarui (${staffList.length} staff).`;
         document.getElementById('adminStatus').textContent = 'Roster absensi diperbarui dari Data Staff.';
       } catch (error) {
-        console.warn('Roster terbaru gagal dimuat dari Supabase:', error);
-        try {
-          const savedRoster = localStorage.getItem(STAFF_SNAPSHOT_KEY);
-          if (savedRoster !== null) {
-            const snapshot = JSON.parse(savedRoster);
-            if (Array.isArray(snapshot)) staffList = sortStaff(snapshot);
-          }
-        } catch (storageError) {
-          console.warn('Snapshot staff absensi tidak dapat dibaca:', storageError);
-        }
+        console.error('Roster terbaru gagal dimuat atau disimpan online:', error);
         if (staffList.length) {
-          document.getElementById('staffSnapshotStatus').textContent = `Supabase gagal dimuat; memakai snapshot lokal lama (${staffList.length} staff). ${error.message}`;
-          document.getElementById('adminStatus').textContent = 'Roster lokal mungkin belum mencakup perubahan staff terbaru.';
+          document.getElementById('staffSnapshotStatus').textContent = `Roster tidak diperbarui online; tetap memakai data yang tampil (${staffList.length} staff). ${error.message}`;
+          document.getElementById('adminStatus').textContent = `Pembaruan roster bersama online gagal: ${error.message}`;
         } else {
-          document.getElementById('staffSnapshotStatus').textContent = `Gagal memuat data staff: ${error.message}`;
+          document.getElementById('staffSnapshotStatus').textContent = `Gagal memuat atau menyimpan data staff online: ${error.message}`;
           attendanceBody.innerHTML = `<tr><td colspan="5" class="px-5 py-12 text-center text-rose-300">Gagal memuat data staff: ${escapeHtml(error.message)}</td></tr>`;
           saveNotice.textContent = 'Data staff tidak dapat dimuat';
           saveNotice.className = 'text-xs text-rose-300';
           document.getElementById('totalStaff').textContent = '0';
-          refreshButton.disabled = false;
-          return;
         }
+      } finally {
+        refreshButton.disabled = false;
       }
       if (weekDates.length) {
         editingStaffIds.clear();
@@ -658,7 +717,6 @@
       } else {
         initializeAttendanceWeek();
       }
-      refreshButton.disabled = false;
     }
 
     function exportCsv() {
@@ -697,6 +755,29 @@
 
       try {
         const { requestAttendanceGraphql } = await nhostModulePromise;
+        const existingData = await requestAttendanceGraphql(`
+          query LoadExistingWeeklyRecap($weekStart: date!) {
+            attendance_weekly_recaps(where: { week_start: { _eq: $weekStart } }, limit: 1) {
+              recap
+            }
+          }
+        `, { weekStart: dates[0] }, 'attendance_admin');
+        const existingStaffById = new Map(
+          (existingData.attendance_weekly_recaps[0]?.recap?.staff || [])
+            .filter(staff => staff?.id !== undefined && staff?.id !== null)
+            .map(staff => [String(staff.id), staff])
+        );
+        recap.staff = recap.staff.map(staff => {
+          const savedStaff = existingStaffById.get(String(staff.id));
+          if (!savedStaff) return staff;
+          return {
+            ...staff,
+            name: typeof savedStaff.name === 'string' ? savedStaff.name : staff.name,
+            role: typeof savedStaff.role === 'string' ? savedStaff.role : staff.role,
+            note: typeof savedStaff.note === 'string' ? savedStaff.note : staff.note
+          };
+        });
+
         await requestAttendanceGraphql(`
           mutation SaveWeeklyRecap($weekStart: date!, $recap: jsonb!) {
             insert_attendance_weekly_recaps_one(
@@ -802,12 +883,10 @@
               };
             }
           }
-          for (const staff of staffList) {
-            if (!rosterById.has(String(staff.id))) rosterById.set(String(staff.id), staff);
-          }
-
-          for (const shift of allShifts) {
-            if (getWeekDates(shift.duty_date)[0] !== weekStartDate) continue;
+          const weekShifts = allShifts
+            .filter(shift => getWeekDates(shift.duty_date)[0] === weekStartDate)
+            .sort((first, second) => `${first.duty_date}|${first.check_in}`.localeCompare(`${second.duty_date}|${second.check_in}`));
+          for (const shift of weekShifts) {
             const staffId = String(shift.staff_id);
             if (!rosterById.has(staffId)) {
               rosterById.set(staffId, { id: staffId, name: shift.staff_name, role: shift.staff_role });
@@ -818,6 +897,10 @@
               record.shifts.push({ id: shift.id, checkIn: shift.check_in, checkOut: shift.check_out });
             }
             week.records[shift.duty_date][staffId] = record;
+          }
+
+          for (const staff of staffList) {
+            if (!rosterById.has(String(staff.id))) rosterById.set(String(staff.id), staff);
           }
 
           if (!await saveWeeklyRecap(week.dates, week.records, [...rosterById.values()])) {
@@ -961,7 +1044,7 @@
     document.getElementById('confirmAdminAction').addEventListener('click', async () => {
       const action = pendingAdminAction;
       adminActionDialog.close();
-      if (action === 'refreshStaff') loadStaff();
+      if (action === 'refreshStaff') await loadStaff();
       if (action === 'saveWeeklyRecap') saveWeeklyRecap();
       if (action === 'logoutAdmin') {
         try {
@@ -1060,7 +1143,7 @@
       }
     });
     document.getElementById('btnExport').addEventListener('click', exportCsv);
-    const staffLoadPromise = loadStaff();
+    const staffLoadPromise = loadStaffSnapshot();
     setInterval(syncAttendanceWeek, 60 * 1000);
     (async () => {
       const { restoreAttendanceAdmin } = await nhostModulePromise;
