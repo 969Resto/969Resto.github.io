@@ -401,6 +401,13 @@
     const inputs = ['periode', 'saldoMingguan', 'saldoPembagian', 'modalDisimpan', 'reimburse', 'totalDitarik', 'kerjasama', 'catatan', 'namaPerangkum'];
     const fmt = (num) => '$' + Number(num || 0).toLocaleString('en-US');
 
+    function formatDate(value) {
+      if (!value) return '-';
+      const [year, month, day] = String(value).split('-').map(Number);
+      if (!year || !month || !day) return String(value);
+      return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(year, month - 1, day));
+    }
+
     async function sendDiscordMessage(payload, session) {
       if (!session) {
         const { getAttendanceSession } = await nhostModulePromise;
