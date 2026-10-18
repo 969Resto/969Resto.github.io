@@ -99,7 +99,34 @@
     async function deleteHistory(id) { salaryHistory = salaryHistory.filter(item => item.id !== id); localStorage.setItem(historyStorageKey, JSON.stringify(salaryHistory)); renderHistory(); const { error } = await supabaseClient.from(historyTable).delete().eq('id', id); if (error) console.warn('Riwayat online tidak terhapus:', error.message); }
     function resetHours() { openConfirmModal('Semua jam kerja akan diubah menjadi < 15 Jam. Data status pembayaran tetap aman.', 'Reset Jam Kerja', () => { hoursData = Object.fromEntries(staffData.map(staff => [staff.id, '< 15 Jam'])); localStorage.setItem(storageKey, JSON.stringify(hoursData)); calculate(); scheduleOnlineSave(); }); }
     function resetPaidStatus() { openConfirmModal('Semua status Gaji Diberikan akan dikembalikan menjadi Belum.', 'Reset Status', () => { paidData = {}; localStorage.removeItem(paidStorageKey); calculate(); scheduleOnlineSave(); }); }
-    async function startNewAllocation(saveCurrent) { const { data, error } = await supabaseClient.from('staff').select('id,name,role,status').order('created_at', { ascending: true }); if (error) { document.getElementById('loadState').textContent = `Gagal memuat staff terbaru: ${error.message}`; console.warn('Staff terbaru belum dimuat:', error.message); return; } const nextStaffData = (data || []).filter(staff => activeStatuses.includes(staff.status)); if (saveCurrent) { const saved = await saveHistory(currentPeriodLabel(), true); if (!saved) return; } staffData = nextStaffData; document.getElementById('saldoPool').value = '0'; syncPoolsFromSaldo(); hoursData = Object.fromEntries(staffData.map(staff => [staff.id, '< 15 Jam'])); paidData = {}; localStorage.setItem(storageKey, JSON.stringify(hoursData)); localStorage.removeItem(paidStorageKey); localStorage.setItem(saldoStorageKey, '0'); calculate(); await saveOnlineSettings(); document.getElementById('loadState').textContent = `${staffData.length} staff aktif dimuat`; }
+    async function startNewAllocation(saveCurrent) {
+      const { data, error } = await supabaseClient.from('staff').select('id,name,role,status').order('created_at', { ascending: true });
+      if (error) {
+        document.getElementById('loadState').textContent = `Gagal memuat staff terbaru: ${error.message}`;
+        console.warn('Staff terbaru belum dimuat:', error.message);
+        return;
+      }
+
+      const nextStaffData = (data || []).filter(staff => activeStatuses.includes(staff.status));
+      if (saveCurrent) {
+        const saved = await saveHistory(currentPeriodLabel(), true);
+        if (!saved) return;
+      }
+
+      staffData = nextStaffData;
+      weightData = {};
+      hoursData = Object.fromEntries(staffData.map(staff => [staff.id, '< 15 Jam']));
+      paidData = {};
+      document.getElementById('saldoPool').value = '0';
+      localStorage.setItem(storageKey, JSON.stringify(hoursData));
+      localStorage.setItem(weightStorageKey, JSON.stringify(weightData));
+      localStorage.removeItem(paidStorageKey);
+      localStorage.setItem(saldoStorageKey, '0');
+      syncPoolsFromSaldo();
+      calculate();
+      await saveOnlineSettings();
+      document.getElementById('loadState').textContent = `${staffData.length} staff aktif dimuat; bobot diperbarui sesuai jabatan`;
+    }
     function openEditHistory(id) { const snapshot = salaryHistory.find(item => String(item.id) === String(id)); if (!snapshot) return; document.getElementById('editHistoryLabel').value = snapshot.label || ''; document.getElementById('editHistoryModal').dataset.historyId = id; document.getElementById('editHistoryModal').classList.add('is-open'); document.getElementById('editHistoryLabel').focus(); }
     function closeEditHistory() { document.getElementById('editHistoryModal').classList.remove('is-open'); }
     async function saveEditedHistory(event) { event.preventDefault(); const modal = document.getElementById('editHistoryModal'); const id = modal.dataset.historyId; const label = document.getElementById('editHistoryLabel').value.trim(); if (!id || !label) return; const saveButton = document.getElementById('btnSaveEditHistory'); saveButton.disabled = true; const { data, error } = await supabaseClient.from(historyTable).update({ label }).eq('id', id).select('id,label').single(); saveButton.disabled = false; if (error) { console.warn('Judul riwayat gagal diperbarui:', error.message); document.getElementById('loadState').textContent = `Judul gagal diperbarui: ${error.message}`; return; } const snapshot = salaryHistory.find(item => String(item.id) === String(id)); if (snapshot) snapshot.label = data?.label || label; localStorage.setItem(historyStorageKey, JSON.stringify(salaryHistory)); renderHistory(); closeEditHistory(); }
@@ -271,7 +298,7 @@
     document.getElementById('btnResetPaid').addEventListener('click', resetPaidStatus);
     document.getElementById('btnCopySalaryRecipients').addEventListener('click', copySalaryRecipientNames);
     document.getElementById('btnBroadcastSalary').addEventListener('click', requestSalaryAnnouncement);
-    document.getElementById('btnNewAllocation').addEventListener('click', () => openChoiceConfirmModal('Pilih apakah pembagian saat ini akan disimpan ke history atau dibuang. History lama tidak akan dihapus. Setelah pilihan, saldo menjadi 0, jam kerja direset ke < 15 Jam, status gaji kembali Belum, dan daftar staff terbaru dimuat.', 'Simpan & Lanjutkan', () => startNewAllocation(true), 'Hapus Saja & Lanjutkan', () => startNewAllocation(false)));
+    document.getElementById('btnNewAllocation').addEventListener('click', () => openChoiceConfirmModal('Pilih apakah pembagian saat ini akan disimpan ke history atau dibuang. History lama tidak akan dihapus. Setelah pilihan, saldo menjadi 0, jam kerja direset ke < 15 Jam, status gaji kembali Belum, daftar staff terbaru dimuat, dan bobot diperbarui sesuai jabatan terbaru.', 'Simpan & Lanjutkan', () => startNewAllocation(true), 'Hapus Saja & Lanjutkan', () => startNewAllocation(false)));
     document.getElementById('btnSaveHistory').addEventListener('click', () => saveHistory());
     document.getElementById('historyBody').addEventListener('click', event => { const button = event.target.closest('[data-history-action]'); if (!button) return; const id = button.dataset.historyId; if (button.dataset.historyAction === 'edit') openEditHistory(id); if (button.dataset.historyAction === 'load') openConfirmModal('Data form saat ini akan digantikan oleh snapshot riwayat yang dipilih.', 'Muat Riwayat', () => loadHistory(id)); if (button.dataset.historyAction === 'delete') openConfirmModal('Riwayat pembagian ini akan dihapus permanen dari daftar online dan cache lokal.', 'Hapus Riwayat', () => deleteHistory(id)); });
     document.getElementById('editHistoryForm').addEventListener('submit', saveEditedHistory);
