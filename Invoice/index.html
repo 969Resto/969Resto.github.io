@@ -113,24 +113,24 @@
         </div>
 
         <div class="grid grid-cols-2 gap-2">
-          <button onclick="addPresetItem('Paket Regular', 25000)" class="text-left bg-slate-800/80 hover:bg-amber-950/30 hover:border-amber-500/50 border border-slate-700/80 p-2.5 rounded-xl transition group active:scale-95">
+          <button onclick="addPresetItem('Paket Regular', 20000)" class="text-left bg-slate-800/80 hover:bg-amber-950/30 hover:border-amber-500/50 border border-slate-700/80 p-2.5 rounded-xl transition group active:scale-95">
             <div class="text-[11.5px] font-bold text-slate-200 group-hover:text-amber-300 transition-colors">Paket Regular</div>
-            <div class="text-[11px] text-amber-400 font-mono font-bold mt-0.5">SM$ 25.000</div>
-          </button>
-
-          <button onclick="addPresetItem('Paket Kemasan', 35000)" class="text-left bg-slate-800/80 hover:bg-amber-950/30 hover:border-amber-500/50 border border-slate-700/80 p-2.5 rounded-xl transition group active:scale-95">
-            <div class="text-[11.5px] font-bold text-slate-200 group-hover:text-amber-300 transition-colors">Paket Kemasan</div>
-            <div class="text-[11px] text-amber-400 font-mono font-bold mt-0.5">SM$ 35.000</div>
-          </button>
-
-          <button onclick="addPresetItem('Paket Camilan', 20000)" class="text-left bg-slate-800/80 hover:bg-amber-950/30 hover:border-amber-500/50 border border-slate-700/80 p-2.5 rounded-xl transition group active:scale-95">
-            <div class="text-[11.5px] font-bold text-slate-200 group-hover:text-amber-300 transition-colors">Paket Camilan</div>
             <div class="text-[11px] text-amber-400 font-mono font-bold mt-0.5">SM$ 20.000</div>
           </button>
 
-          <button onclick="addPresetItem('Paket Kemasan Camilan', 30000)" class="text-left bg-slate-800/80 hover:bg-amber-950/30 hover:border-amber-500/50 border border-slate-700/80 p-2.5 rounded-xl transition group active:scale-95">
-            <div class="text-[11.5px] font-bold text-slate-200 group-hover:text-amber-300 transition-colors">Paket K. Camilan</div>
+          <button onclick="addPresetItem('Paket Kemasan Regular', 30000)" class="text-left bg-slate-800/80 hover:bg-amber-950/30 hover:border-amber-500/50 border border-slate-700/80 p-2.5 rounded-xl transition group active:scale-95">
+            <div class="text-[11.5px] font-bold text-slate-200 group-hover:text-amber-300 transition-colors">Paket Kemasan Regular</div>
             <div class="text-[11px] text-amber-400 font-mono font-bold mt-0.5">SM$ 30.000</div>
+          </button>
+
+          <button onclick="addPresetItem('Paket Camilan', 15000)" class="text-left bg-slate-800/80 hover:bg-amber-950/30 hover:border-amber-500/50 border border-slate-700/80 p-2.5 rounded-xl transition group active:scale-95">
+            <div class="text-[11.5px] font-bold text-slate-200 group-hover:text-amber-300 transition-colors">Paket Camilan</div>
+            <div class="text-[11px] text-amber-400 font-mono font-bold mt-0.5">SM$ 15.000</div>
+          </button>
+
+          <button onclick="addPresetItem('Paket Kemasan Camilan', 25000)" class="text-left bg-slate-800/80 hover:bg-amber-950/30 hover:border-amber-500/50 border border-slate-700/80 p-2.5 rounded-xl transition group active:scale-95">
+            <div class="text-[11.5px] font-bold text-slate-200 group-hover:text-amber-300 transition-colors">Paket K. Camilan</div>
+            <div class="text-[11px] text-amber-400 font-mono font-bold mt-0.5">SM$ 25.000</div>
           </button>
         </div>
       </div>
@@ -149,8 +149,8 @@
           <div>
             <label class="block font-semibold text-slate-400 mb-1">Status Faktur</label>
             <select id="input-status" class="w-full bg-slate-800/90 border border-slate-700 rounded-lg px-2 py-1.5 font-semibold text-slate-100 focus:border-amber-500 focus:outline-none" onchange="syncLiveText()">
-              <option value="Sent" selected>Sent (Kuning)</option>
-              <option value="Paid">Paid (Hijau)</option>
+              <option value="Sent">Sent (Kuning)</option>
+              <option value="Paid" selected>Paid (Hijau)</option>
               <option value="Unpaid">Unpaid (Merah)</option>
               <option value="Pending">Pending (Biru)</option>
             </select>
@@ -417,8 +417,8 @@
 
     // State items
     let itemsData = [
-      { id: 1, desc: 'Paket Regular', qty: 50, price: 25000 },
-      { id: 2, desc: 'Paket Kemasan', qty: 50, price: 35000 }
+      { id: 1, desc: 'Paket Regular', qty: 50, price: 20000 },
+      { id: 2, desc: 'Paket Kemasan Regular', qty: 50, price: 30000 }
     ];
 
     // Simpan Base64 Data URL dari logo untuk mencegah blokir Tainted Canvas
@@ -528,7 +528,7 @@
       reader.readAsDataURL(file);
     }
 
-    function renderStatusSvg(statusText = 'Sent') {
+    function renderStatusSvg(statusText = 'Paid') {
       const container = document.getElementById('badge-svg-container');
       if (!container) return;
 
@@ -696,7 +696,7 @@
         id: Date.now() + Math.floor(Math.random() * 1000),
         desc: 'Paket Spesial Baru',
         qty: 1,
-        price: 25000
+        price: 20000
       });
       buildTableRows();
       showToast('Baris baru ditambahkan', '➕');
