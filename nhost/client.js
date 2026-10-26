@@ -1,5 +1,4 @@
 import { createNhostClient } from 'https://esm.sh/@nhost/nhost-js@3';
-import { generatePKCEPair } from 'https://esm.sh/@nhost/nhost-js@3/auth';
 
 const GRAPHQL_URL = 'https://xqjnbwhipztjcbcnmzam.graphql.ap-southeast-1.nhost.run/v1';
 const AUTH_HEALTH_URL = 'https://xqjnbwhipztjcbcnmzam.auth.ap-southeast-1.nhost.run/v1/healthz';
@@ -59,7 +58,13 @@ export async function signInAttendanceAdmin(email, password) {
 
 export async function signInAttendanceAdminWithDiscord() {
   await waitForNhost();
-  const { verifier, challenge } = await generatePKCEPair();
+  const verifierBytes = crypto.getRandomValues(new Uint8Array(32));
+  const verifier = toBase64Url(verifierBytes);
+  const challengeBytes = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(verifier)
+  );
+  const challenge = toBase64Url(new Uint8Array(challengeBytes));
   localStorage.setItem('nhost_pkce_verifier', verifier);
   const redirectTo = `${window.location.origin}${window.location.pathname}`;
   const providerUrl = nhost.auth.signInProviderURL('discord', {
@@ -67,6 +72,12 @@ export async function signInAttendanceAdminWithDiscord() {
     codeChallenge: challenge
   });
   window.location.assign(providerUrl);
+}
+
+function toBase64Url(bytes) {
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 async function activateAttendanceAdminRole() {
