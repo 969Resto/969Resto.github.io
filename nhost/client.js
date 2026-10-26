@@ -66,15 +66,37 @@ export async function restoreAttendanceAdmin() {
   return true;
 }
 
+export function finishAttendanceAdminLoading() {
+  document.documentElement.classList.remove('auth-checking');
+  document.documentElement.classList.remove('auth-required');
+  document.getElementById('authLoadingOverlay')?.remove();
+}
+
 export async function getAttendanceSession() {
   await waitForNhost();
   return nhost.auth.getSession();
 }
 
 export async function ensureAttendanceAdmin() {
-  if (await restoreAttendanceAdmin()) {
-    document.documentElement.classList.add('admin-authenticated');
-    return true;
+  try {
+    if (await restoreAttendanceAdmin()) {
+      document.documentElement.classList.add('admin-authenticated');
+      finishAttendanceAdminLoading();
+      return true;
+    }
+  } catch (error) {
+    const overlay = document.getElementById('authLoadingOverlay');
+    const message = overlay?.querySelector('p');
+    if (!overlay || !message) throw error;
+
+    message.textContent = `Sesi admin tidak dapat diperiksa: ${error.message}`;
+    const retryButton = document.createElement('button');
+    retryButton.type = 'button';
+    retryButton.className = 'auth-loading-retry';
+    retryButton.textContent = 'Coba lagi';
+    retryButton.addEventListener('click', () => window.location.reload());
+    overlay.querySelector('.auth-loading-card')?.append(retryButton);
+    return false;
   }
 
   const page = window.location.pathname.split('/').pop();

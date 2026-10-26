@@ -1,0 +1,62 @@
+html.auth-checking body > :not(#authLoadingOverlay),
+html.auth-required:not(.admin-authenticated) body > :not(#authLoadingOverlay) {
+  visibility: hidden !important;
+}
+
+#authLoadingOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: #080303;
+  color: #fdfbf7;
+  text-align: center;
+}
+
+#authLoadingOverlay[hidden] {
+  display: none;
+}
+
+#authLoadingOverlay .auth-loading-card {
+  width: min(100%, 24rem);
+  padding: 2rem;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 1.25rem;
+  background: rgba(15, 23, 42, 0.92);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+}
+
+#authLoadingOverlay .auth-loading-icon {
+  margin-bottom: 1rem;
+  color: #fbbf24;
+  font-size: 1.75rem;
+}
+
+#authLoadingOverlay h1 {
+  margin: 0;
+  color: #fef3c7;
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+#authLoadingOverlay p {
+  margin: 0.6rem 0 0;
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+#authLoadingOverlay .auth-loading-retry {
+  margin-top: 1.25rem;
+  padding: 0.65rem 1rem;
+  border: 0;
+  border-radius: 0.65rem;
+  background: #f59e0b;
+  color: #111827;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}

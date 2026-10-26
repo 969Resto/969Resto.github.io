@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>document.documentElement.classList.add('auth-checking', 'auth-required');</script>
   <title>969 Resto - Data Keuangan</title>
   <link rel="icon" type="image/png" href="../Invoice/logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -10,10 +11,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../nhost/auth-loading.css" />
   <link rel="stylesheet" href="keuangan.css" />
   <link rel="stylesheet" href="rangkuman-keuangan.css" />
 </head>
 <body class="min-h-screen p-4 sm:p-6 md:p-8">
+  <div id="authLoadingOverlay" role="status" aria-live="polite">
+    <div class="auth-loading-card">
+      <div class="auth-loading-icon"><i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i></div>
+      <h1>Memulihkan Sesi Admin</h1>
+      <p>Memeriksa sesi login Anda, mohon tunggu...</p>
+    </div>
+  </div>
   <section id="adminLoginGate" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm" aria-labelledby="adminLoginTitle">
     <div class="portal-card w-full max-w-sm rounded-2xl p-6 shadow-2xl">
       <div class="mb-5 flex items-center gap-3">
@@ -330,6 +339,8 @@
       document.getElementById('adminLoginGate').classList.add('hidden');
       document.getElementById('btnAdminLogout').classList.remove('hidden');
       document.getElementById('adminLoginError').classList.add('hidden');
+      const { finishAttendanceAdminLoading } = await nhostModulePromise;
+      finishAttendanceAdminLoading();
       resetForm();
       await loadHistory();
     }
@@ -415,10 +426,18 @@
 
     (async () => {
       try {
-        const { restoreAttendanceAdmin, getAttendanceSession } = await nhostModulePromise;
+        const { restoreAttendanceAdmin, getAttendanceSession, finishAttendanceAdminLoading } = await nhostModulePromise;
         if (await restoreAttendanceAdmin()) await activateAdminSession(await getAttendanceSession());
-        else setStatus('Masuk dengan akun admin untuk membuka data.');
+        else {
+          finishAttendanceAdminLoading();
+          setStatus('Masuk dengan akun admin untuk membuka data.');
+        }
       } catch (error) {
+        document.documentElement.classList.remove('auth-checking');
+        document.documentElement.classList.remove('auth-required');
+        document.getElementById('authLoadingOverlay')?.remove();
+        document.getElementById('adminLoginError').textContent = `Sesi admin gagal diperiksa: ${error.message}`;
+        document.getElementById('adminLoginError').classList.remove('hidden');
         setStatus(`Gagal memulihkan sesi admin: ${error.message}`, true);
       }
     })();

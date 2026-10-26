@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <script>document.documentElement.classList.add('auth-checking', 'auth-required');</script>
   <title>969 Resto - Rangkuman Keuangan Mingguan</title>
   <link rel="icon" type="image/png" href="../Invoice/logo.png" />
 
@@ -15,6 +16,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome 6 CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../nhost/auth-loading.css" />
   <!-- Supabase client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -22,6 +24,13 @@
 </head>
 <body class="flex flex-col justify-between min-h-screen p-4 sm:p-6 md:p-8">
 
+  <div id="authLoadingOverlay" role="status" aria-live="polite">
+    <div class="auth-loading-card">
+      <div class="auth-loading-icon"><i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i></div>
+      <h1>Memulihkan Sesi Admin</h1>
+      <p>Memeriksa sesi login Anda, mohon tunggu...</p>
+    </div>
+  </div>
   <section id="adminLoginGate" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm" aria-labelledby="adminLoginTitle">
     <div class="portal-card w-full max-w-sm rounded-2xl p-6 shadow-2xl">
       <div class="mb-5 flex items-center gap-3">
@@ -932,6 +941,8 @@ Catatan tambahan: ${catatan}`;
       document.getElementById('adminLoginGate').classList.add('hidden');
       document.getElementById('btnAdminLogout').classList.remove('hidden');
       setAdminLoginError('');
+      const { finishAttendanceAdminLoading } = await nhostModulePromise;
+      finishAttendanceAdminLoading();
       updateLivePreview();
       await loadHistory();
     }
@@ -968,12 +979,21 @@ Catatan tambahan: ${catatan}`;
     });
 
     async function initializeAdminSession() {
-      const { restoreAttendanceAdmin, getAttendanceSession, signOutAttendanceAdmin } = await nhostModulePromise;
-      if (!await restoreAttendanceAdmin()) return;
+      let auth;
       try {
-        await activateAdminSession(await getAttendanceSession());
+        auth = await nhostModulePromise;
+        if (!await auth.restoreAttendanceAdmin()) {
+          auth.finishAttendanceAdminLoading();
+          return;
+        }
+        await activateAdminSession(await auth.getAttendanceSession());
       } catch (sessionError) {
-        await signOutAttendanceAdmin();
+        if (auth) auth.finishAttendanceAdminLoading();
+        else {
+          document.documentElement.classList.remove('auth-checking');
+          document.documentElement.classList.remove('auth-required');
+          document.getElementById('authLoadingOverlay')?.remove();
+        }
         setAdminLoginError(sessionError.message || 'Sesi admin tidak valid. Silakan login kembali.');
       }
     }

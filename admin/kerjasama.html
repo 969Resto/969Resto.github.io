@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>document.documentElement.classList.add('auth-checking', 'auth-required');</script>
   <title>969 Resto - Data Kerjasama</title>
   <link rel="icon" type="image/png" href="../Invoice/logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -10,9 +11,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../nhost/auth-loading.css" />
   <link rel="stylesheet" href="kerjasama.css" />
 </head>
 <body class="min-h-screen p-4 sm:p-6 md:p-8">
+  <div id="authLoadingOverlay" role="status" aria-live="polite">
+    <div class="auth-loading-card">
+      <div class="auth-loading-icon"><i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i></div>
+      <h1>Memulihkan Sesi Admin</h1>
+      <p>Memeriksa sesi login Anda, mohon tunggu...</p>
+    </div>
+  </div>
   <header class="page-header mx-auto flex w-full max-w-7xl flex-col gap-4 pb-6 sm:flex-row sm:items-center sm:justify-between">
     <div class="flex items-center gap-4">
       <img src="../Invoice/logo.png" alt="969 Resto" class="h-12 w-12 rounded-xl border border-amber-500/30 object-contain p-1">
