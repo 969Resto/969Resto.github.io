@@ -361,12 +361,16 @@
 
     (async () => {
       try {
-        const { restoreAttendanceAdmin } = await nhostModulePromise;
+        const { restoreAttendanceAdmin, getAttendanceSession } = await nhostModulePromise;
         if (await restoreAttendanceAdmin()) {
           activateAdminDashboard();
           return;
         }
-        showAdminLogin();
+        const session = await getAttendanceSession();
+        const message = session
+          ? 'Login berhasil, tetapi akun ini belum memiliki role admin (attendance_admin). Hubungi administrator untuk meminta akses. Setelah role diberikan, keluar lalu login kembali.'
+          : '';
+        showAdminLogin(message);
       } catch (error) {
         showAdminLogin(error.message || 'Sesi admin gagal diperiksa. Silakan coba lagi.');
       }
