@@ -356,7 +356,14 @@ async function loadWeeklyReport(request: Request, env: Env) {
   const range = getWeekBounds(input.weekStart);
   if (!range) return { status: 400, body: { error: "Pilih minggu ISO penuh yang dimulai pada hari Senin." } };
 
-  const syncResult = await syncDiscordHistory(env);
+  let syncResult: { processed: number; stored: number; backfillComplete: boolean } | null = null;
+  let syncError: string | null = null;
+  try {
+    syncResult = await syncDiscordHistory(env);
+  } catch (error) {
+    console.error("Sinkronisasi Log Duty gagal; menampilkan data tersimpan:", error);
+    syncError = error instanceof Error ? error.message : "Gagal menyinkronkan log Discord.";
+  }
   const staff = await getWeeklyStaff(env, range);
 
   const backfill = await getState(env.DUTY_DB, "backfill_complete");
@@ -368,7 +375,8 @@ async function loadWeeklyReport(request: Request, env: Env) {
       weekEnd: range.end,
       syncedAt: new Date().toISOString(),
       backfillComplete: backfill?.state_value === "true",
-      syncResult
+      syncResult,
+      syncError
     }
   };
 }

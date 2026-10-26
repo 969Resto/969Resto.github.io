@@ -168,6 +168,7 @@
 
     function setLoadStatus(message, state = 'default') {
       loadStatus.textContent = message;
+      loadStatus.title = message;
       loadStatus.dataset.state = state;
     }
 
@@ -247,7 +248,10 @@
       const syncedAt = result.syncedAt ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(result.syncedAt)) : 'belum pernah';
       const backfillStatus = result.backfillComplete ? 'Histori channel sudah selesai diproses.' : 'Histori lama masih diproses bertahap.';
       const syncCount = result.syncResult ? ` ${result.syncResult.stored} log baru disimpan.` : '';
-      setLoadStatus(`Terakhir sinkron: ${syncedAt}. ${reportGroups.length} License ditemukan.${syncCount} ${backfillStatus}`, 'success');
+      const syncStatus = result.syncError
+        ? `Sinkronisasi Discord gagal: ${result.syncError}. Menampilkan data tersimpan; coba muat ulang.`
+        : `Terakhir sinkron: ${syncedAt}.`;
+      setLoadStatus(`${syncStatus} ${reportGroups.length} License ditemukan.${syncCount} ${backfillStatus}`, result.syncError ? 'warning' : 'success');
     }
 
     async function refreshReport() {
