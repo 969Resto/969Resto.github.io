@@ -316,7 +316,7 @@
     function showAdminLogin(message = '') {
       document.getElementById('sessionChecking').classList.add('hidden');
       document.getElementById('adminLoginForm').classList.remove('hidden');
-      document.getElementById('authStatus').textContent = 'Masuk dengan akun admin yang memiliki akses attendance_admin.';
+      document.getElementById('authStatus').textContent = 'Masuk dengan akun admin yang memiliki akses ke panel manajemen.';
       if (message) showAdminLoginError(message);
     }
 
@@ -368,7 +368,7 @@
         }
         const session = await getAttendanceSession();
         const message = session
-          ? 'Login berhasil, tetapi akun ini belum memiliki role admin (attendance_admin). Hubungi administrator untuk meminta akses. Setelah role diberikan, keluar lalu login kembali.'
+          ? 'Login berhasil, tetapi akun ini belum memiliki role admin. Hubungi administrator untuk meminta akses. Setelah role diberikan, keluar lalu login kembali.'
           : '';
         showAdminLogin(message);
       } catch (error) {
