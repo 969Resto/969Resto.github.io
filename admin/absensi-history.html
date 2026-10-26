@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script>document.documentElement.classList.add('auth-checking', 'auth-required');</script>
+  <style>
+    html.auth-checking body > :not(#authLoadingOverlay),
+    html.auth-required:not(.admin-authenticated) body > :not(#authLoadingOverlay) { visibility: hidden !important; }
+    #authLoadingOverlay { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 1rem; background: #080303; color: #fdfbf7; text-align: center; }
+  </style>
   <title>969 Resto - Riwayat Absensi</title>
   <link rel="icon" type="image/png" href="../Invoice/logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,18 +28,14 @@
     </div>
   </div>
   <div id="adminGate" class="fixed inset-0 z-50 flex items-center justify-center bg-[#080303] p-4">
-    <form id="adminGateForm" class="portal-card w-full max-w-sm rounded-xl p-6 text-center shadow-2xl sm:p-8">
+    <div id="adminGateForm" class="portal-card w-full max-w-sm rounded-xl p-6 text-center shadow-2xl sm:p-8">
       <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-xl text-amber-300"><i class="fa-solid fa-shield-halved"></i></div>
       <h1 class="font-luxury text-xl font-bold text-amber-100">Akses Admin</h1>
-      <p class="mt-2 text-xs leading-relaxed text-slate-400">Masuk dengan akun admin Nhost untuk melihat arsip.</p>
-      <label for="adminEmail" class="sr-only">Email Admin</label>
-      <input id="adminEmail" type="email" autocomplete="username" required class="field-dark mt-5 w-full rounded-lg px-3 py-3 text-sm">
-      <label for="adminPassword" class="sr-only">Password Admin</label>
-      <input id="adminPassword" type="password" autocomplete="current-password" required class="field-dark mt-3 w-full rounded-lg px-3 py-3 text-sm">
+      <p class="mt-2 text-xs leading-relaxed text-slate-400">Masuk dengan akun Discord yang memiliki akses admin untuk melihat arsip.</p>
       <p id="gateError" class="mt-2 hidden text-xs text-rose-300" role="alert"></p>
-      <button id="adminLoginButton" type="submit" class="mt-4 w-full rounded-lg bg-amber-500 px-4 py-3 text-xs font-bold text-slate-950 transition hover:bg-amber-400"><i class="fa-solid fa-right-to-bracket mr-1"></i>Masuk Admin</button>
+      <button id="adminLoginButton" type="button" class="mt-4 w-full rounded-lg bg-[#5865F2] px-4 py-3 text-xs font-bold text-white transition hover:bg-[#4752C4]"><i class="fa-brands fa-discord mr-1"></i>Masuk dengan Discord</button>
       <a href="../absensi.html" class="mt-4 inline-block text-xs text-slate-400 transition hover:text-slate-200">Kembali ke Absensi</a>
-    </form>
+    </div>
   </div>
 
   <div id="historyPage" class="hidden">
@@ -331,30 +332,19 @@
       }).join('') : '<tr><td colspan="5" class="px-5 py-12 text-center text-slate-400">Rekap ini belum memiliki data staff.</td></tr>';
     }
 
-    document.getElementById('adminGateForm').addEventListener('submit', async event => {
-      event.preventDefault();
-      const emailInput = document.getElementById('adminEmail');
-      const passwordInput = document.getElementById('adminPassword');
+    document.getElementById('adminLoginButton').addEventListener('click', async event => {
       const errorMessage = document.getElementById('gateError');
-      const loginButton = document.getElementById('adminLoginButton');
+      const loginButton = event.currentTarget;
       errorMessage.classList.add('hidden');
       loginButton.disabled = true;
-      loginButton.textContent = 'Memverifikasi...';
       try {
-        const { signInAttendanceAdmin, requestAttendanceGraphql } = await nhostModulePromise;
-        await signInAttendanceAdmin(emailInput.value.trim(), passwordInput.value);
-        await requestAttendanceGraphql('query VerifyAttendanceAdmin { attendance_weekly_recaps(limit: 1) { week_start } }', {}, 'attendance_admin');
-        document.getElementById('adminGate').classList.add('hidden');
-        document.getElementById('historyPage').classList.remove('hidden');
-        await loadArchives();
+        const { signInAttendanceAdminWithDiscord } = await nhostModulePromise;
+        await signInAttendanceAdminWithDiscord();
       } catch (error) {
         errorMessage.textContent = error.message;
         errorMessage.classList.remove('hidden');
-        passwordInput.value = '';
-        passwordInput.focus();
       } finally {
         loginButton.disabled = false;
-        loginButton.innerHTML = '<i class="fa-solid fa-right-to-bracket mr-1"></i>Masuk Admin';
       }
     });
 
@@ -431,8 +421,13 @@
     });
     (async () => {
       try {
-        const { restoreAttendanceAdmin, finishAttendanceAdminLoading } = await nhostModulePromise;
+        const { restoreAttendanceAdmin, getAttendanceSession, finishAttendanceAdminLoading } = await nhostModulePromise;
         if (!await restoreAttendanceAdmin()) {
+          if (await getAttendanceSession()) {
+            const errorMessage = document.getElementById('gateError');
+            errorMessage.textContent = 'Akun Discord ini belum memiliki akses admin. Hubungi administrator untuk meminta akses.';
+            errorMessage.classList.remove('hidden');
+          }
           finishAttendanceAdminLoading();
           return;
         }

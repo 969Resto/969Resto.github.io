@@ -26,35 +26,20 @@ async function initializeNhost() {
   await nhost.auth.waitUntilReady();
 }
 
-export async function signInAttendanceAdmin(email, password) {
-  await waitForNhost();
-  const result = await nhost.auth.signIn({ email, password });
-  if (result.error) throw new Error(result.error.message || 'Email atau password tidak sesuai.');
-  if (!result.session) throw new Error('Login belum menghasilkan sesi. Periksa akun Nhost Anda.');
-  await activateAttendanceAdminRole();
-  return result.session;
-}
-
 export async function signInAttendanceAdminWithDiscord() {
   await waitForNhost();
-  const redirectTo = `${window.location.origin}${window.location.pathname}`;
+  const redirectTo = `${window.location.origin}/admin/`;
   const result = await nhost.auth.signIn({
     provider: 'discord',
     options: { redirectTo }
   });
   if (result.error) throw new Error(result.error.message || 'Login Discord gagal.');
   if (!result.providerUrl) throw new Error('Nhost tidak mengembalikan URL login Discord.');
-  window.location.assign(result.providerUrl);
-}
-
-async function activateAttendanceAdminRole() {
-  const claims = nhost.auth.getHasuraClaims();
-  const allowedRoles = claims?.['x-hasura-allowed-roles'] || [];
-  if (!allowedRoles.includes('attendance_admin')) {
-    await nhost.auth.signOut({ all: false });
-    throw new Error('Akun ini belum diberi role attendance_admin.');
+  const currentPage = window.location.pathname.split('/').pop();
+  if (currentPage && currentPage !== 'index.html') {
+    sessionStorage.setItem('nhostAdminReturnPage', currentPage);
   }
-  nhost.setRole('attendance_admin');
+  window.location.assign(result.providerUrl);
 }
 
 export async function restoreAttendanceAdmin() {
