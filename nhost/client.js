@@ -1,4 +1,5 @@
 import { createNhostClient } from 'https://esm.sh/@nhost/nhost-js@3';
+import { generatePKCEPair } from 'https://esm.sh/@nhost/nhost-js@3/auth';
 
 const GRAPHQL_URL = 'https://xqjnbwhipztjcbcnmzam.graphql.ap-southeast-1.nhost.run/v1';
 const AUTH_HEALTH_URL = 'https://xqjnbwhipztjcbcnmzam.auth.ap-southeast-1.nhost.run/v1/healthz';
@@ -6,13 +7,45 @@ const nhost = createNhostClient({
   subdomain: 'xqjnbwhipztjcbcnmzam',
   region: 'ap-southeast-1'
 });
+let nhostInitialization;
 
 fetch(AUTH_HEALTH_URL, { mode: 'no-cors', cache: 'no-store' })
   .catch(error => console.warn('Nhost auth warm-up failed:', error));
 
 export async function waitForNhost() {
-  await nhost.auth.waitUntilReady();
+  if (!nhostInitialization) nhostInitialization = initializeNhost();
+  try {
+    await nhostInitialization;
+  } catch (error) {
+    nhostInitialization = undefined;
+    throw error;
+  }
   return nhost;
+}
+
+async function initializeNhost() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const authError = params.get('error');
+  const authErrorDescription = params.get('error_description');
+  if (code || authError) {
+    params.delete('code');
+    params.delete('error');
+    params.delete('error_description');
+    const query = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      '',
+      `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`
+    );
+
+    if (authError) throw new Error(authErrorDescription || `Login Discord gagal (${authError}).`);
+    const codeVerifier = localStorage.getItem('nhost_pkce_verifier');
+    localStorage.removeItem('nhost_pkce_verifier');
+    if (!codeVerifier) throw new Error('Verifikasi login Discord gagal. Silakan coba masuk kembali.');
+    await nhost.auth.tokenExchange({ code, codeVerifier });
+  }
+  await nhost.auth.waitUntilReady();
 }
 
 export async function signInAttendanceAdmin(email, password) {
@@ -20,6 +53,23 @@ export async function signInAttendanceAdmin(email, password) {
   const result = await nhost.auth.signIn({ email, password });
   if (result.error) throw new Error(result.error.message || 'Email atau password tidak sesuai.');
   if (!result.session) throw new Error('Login belum menghasilkan sesi. Periksa akun Nhost Anda.');
+  await activateAttendanceAdminRole();
+  return result.session;
+}
+
+export async function signInAttendanceAdminWithDiscord() {
+  await waitForNhost();
+  const { verifier, challenge } = await generatePKCEPair();
+  localStorage.setItem('nhost_pkce_verifier', verifier);
+  const redirectTo = `${window.location.origin}${window.location.pathname}`;
+  const providerUrl = nhost.auth.signInProviderURL('discord', {
+    redirectTo,
+    codeChallenge: challenge
+  });
+  window.location.assign(providerUrl);
+}
+
+async function activateAttendanceAdminRole() {
   const claims = nhost.auth.getHasuraClaims();
   const allowedRoles = claims?.['x-hasura-allowed-roles'] || [];
   if (!allowedRoles.includes('attendance_admin')) {
@@ -27,7 +77,6 @@ export async function signInAttendanceAdmin(email, password) {
     throw new Error('Akun ini belum diberi role attendance_admin.');
   }
   nhost.setRole('attendance_admin');
-  return result.session;
 }
 
 export async function restoreAttendanceAdmin() {
@@ -36,13 +85,7 @@ export async function restoreAttendanceAdmin() {
   const allowedRoles = nhost.auth.getHasuraClaims()?.['x-hasura-allowed-roles'] || [];
   if (!allowedRoles.includes('attendance_admin')) return false;
   nhost.setRole('attendance_admin');
-  try {
-    await requestAttendanceGraphql('query RestoreAttendanceAdmin { attendance_weekly_recaps(limit: 1) { week_start } }', {}, 'attendance_admin');
-    return true;
-  } catch (error) {
-    nhost.unsetRole();
-    return false;
-  }
+  return true;
 }
 
 export async function getAttendanceSession() {
