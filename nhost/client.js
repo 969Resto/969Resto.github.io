@@ -23,27 +23,6 @@ export async function waitForNhost() {
 }
 
 async function initializeNhost() {
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get('code');
-  const authError = params.get('error');
-  const authErrorDescription = params.get('error_description');
-  if (code || authError) {
-    params.delete('code');
-    params.delete('error');
-    params.delete('error_description');
-    const query = params.toString();
-    window.history.replaceState(
-      window.history.state,
-      '',
-      `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`
-    );
-
-    if (authError) throw new Error(authErrorDescription || `Login Discord gagal (${authError}).`);
-    const codeVerifier = localStorage.getItem('nhost_pkce_verifier');
-    localStorage.removeItem('nhost_pkce_verifier');
-    if (!codeVerifier) throw new Error('Verifikasi login Discord gagal. Silakan coba masuk kembali.');
-    await nhost.auth.tokenExchange({ code, codeVerifier });
-  }
   await nhost.auth.waitUntilReady();
 }
 
@@ -58,26 +37,14 @@ export async function signInAttendanceAdmin(email, password) {
 
 export async function signInAttendanceAdminWithDiscord() {
   await waitForNhost();
-  const verifierBytes = crypto.getRandomValues(new Uint8Array(32));
-  const verifier = toBase64Url(verifierBytes);
-  const challengeBytes = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(verifier)
-  );
-  const challenge = toBase64Url(new Uint8Array(challengeBytes));
-  localStorage.setItem('nhost_pkce_verifier', verifier);
   const redirectTo = `${window.location.origin}${window.location.pathname}`;
-  const providerUrl = nhost.auth.signInProviderURL('discord', {
-    redirectTo,
-    codeChallenge: challenge
+  const result = await nhost.auth.signIn({
+    provider: 'discord',
+    options: { redirectTo }
   });
-  window.location.assign(providerUrl);
-}
-
-function toBase64Url(bytes) {
-  let binary = '';
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  if (result.error) throw new Error(result.error.message || 'Login Discord gagal.');
+  if (!result.providerUrl) throw new Error('Nhost tidak mengembalikan URL login Discord.');
+  window.location.assign(result.providerUrl);
 }
 
 async function activateAttendanceAdminRole() {
