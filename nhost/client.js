@@ -44,11 +44,46 @@ export async function signInAttendanceAdminWithDiscord() {
 
 export async function restoreAttendanceAdmin() {
   await waitForNhost();
-  if (!nhost.auth.getAccessToken()) return false;
-  const allowedRoles = nhost.auth.getHasuraClaims()?.['x-hasura-allowed-roles'] || [];
-  if (!allowedRoles.includes('attendance_admin')) return false;
+  const session = nhost.auth.getSession();
+  const accessToken = nhost.auth.getAccessToken();
+  const allowedRoles = accessToken
+    ? nhost.auth.getHasuraClaims()?.['x-hasura-allowed-roles'] || []
+    : [];
+  const isAdmin = Boolean(accessToken && allowedRoles.includes('attendance_admin'));
+  renderAttendanceAdminGreeting(session, isAdmin);
+  if (!isAdmin) return false;
   nhost.setRole('attendance_admin');
   return true;
+}
+
+function renderAttendanceAdminGreeting(session, isAdmin) {
+  const header = document.querySelector('header');
+  const actions = header?.querySelector('nav') || header?.lastElementChild;
+  let greeting = header?.querySelector('[data-attendance-admin-greeting]');
+
+  if (!greeting && actions) {
+    greeting = document.createElement('span');
+    greeting.dataset.attendanceAdminGreeting = '';
+    greeting.className = 'inline-flex items-center rounded-xl border border-amber-500/30 bg-amber-950/30 px-3 py-1.5 text-xs font-semibold text-amber-200';
+    greeting.setAttribute('aria-live', 'polite');
+    actions.prepend(greeting);
+  }
+
+  const user = session?.user;
+  const username = isAdmin
+    ? [
+        user?.displayName,
+        user?.metadata?.preferred_username,
+        user?.metadata?.username,
+        user?.metadata?.global_name
+      ].find(value => typeof value === 'string' && value.trim())?.trim() || 'Admin'
+    : 'Anonim';
+
+  const greetingText = isAdmin ? `Halo Admin: ${username}` : 'Halo : Anonim';
+  document.querySelectorAll('[data-attendance-admin-greeting]').forEach(element => {
+    element.textContent = greetingText;
+    element.classList.remove('hidden');
+  });
 }
 
 export function finishAttendanceAdminLoading() {
