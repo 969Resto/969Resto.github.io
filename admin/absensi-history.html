@@ -166,6 +166,7 @@
     const archiveSelect = document.getElementById('archiveSelect');
     const deleteArchiveDialog = document.getElementById('deleteArchiveDialog');
     const weeklyStaffDetailsDialog = document.getElementById('weeklyStaffDetailsDialog');
+    const roleOrder = ['CEO', 'CFO', 'Head Manager', 'Assistant Manager', 'Team Leader', 'Head Chef', 'Assistant Chef', 'Worker', 'Recruit'];
     let archives = [];
     let pendingArchiveWeek = null;
     let selectedWeeklyStaffIndex = null;
@@ -191,6 +192,13 @@
       return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(`${date}T00:00:00`));
     }
 
+    function sortArchiveStaff(staff) {
+      return staff.slice().sort((first, second) => {
+        const firstRoleRank = roleOrder.indexOf(first.role);
+        const secondRoleRank = roleOrder.indexOf(second.role);
+        return (firstRoleRank < 0 ? roleOrder.length : firstRoleRank) - (secondRoleRank < 0 ? roleOrder.length : secondRoleRank);
+      });
+    }
     function formatTime(timestamp) {
       return new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(timestamp));
     }
@@ -289,7 +297,8 @@
           ...row.recap,
           startDate: row.week_start,
           endDate: row.recap.endDate,
-          savedAt: row.saved_at
+          savedAt: row.saved_at,
+          staff: sortArchiveStaff(row.recap.staff)
         }));
       } catch (error) {
         document.getElementById('archiveSummary').classList.add('hidden');
