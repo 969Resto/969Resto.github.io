@@ -40,7 +40,7 @@
       <div>
         <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">Manajemen Tim</p>
         <h2 class="font-luxury text-2xl font-bold text-slate-100 sm:text-3xl">Pembukuan Absensi Mingguan</h2>
-        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">Periode pembukuan berjalan Senin sampai Minggu. Pilih hari untuk mengisi jam shift secara manual dalam format 24 jam (HH:MM).</p>
+        <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">Pembukuan baru dimulai setiap hari Senin pukul 00.00 WIB, setelah periode Minggu berakhir. Pilih hari untuk mengisi jam shift secara manual dalam format 24 jam (HH:MM).</p>
       </div>
       <div class="flex flex-wrap items-end gap-3">
         <p class="text-xs text-slate-400">Periode <span id="weekRange" class="ml-1 font-semibold text-amber-200"></span></p>
@@ -158,6 +158,7 @@
         </div>
         <div class="grid gap-3 sm:grid-cols-2">
           <button id="saveWeeklyRecap" type="button" class="rounded-lg border border-emerald-500/40 bg-emerald-950/40 px-4 py-3 text-left text-xs font-semibold text-emerald-200 transition hover:bg-emerald-900/50"><i class="fa-solid fa-floppy-disk mr-2"></i>Simpan Rekap Mingguan</button>
+          <button id="restoreWeeklyAttendance" type="button" class="rounded-lg border border-sky-500/40 bg-sky-950/40 px-4 py-3 text-left text-xs font-semibold text-sky-200 transition hover:bg-sky-900/50"><i class="fa-solid fa-rotate-left mr-2"></i>Pulihkan dari Rekap Minggu Ini</button>
           <a href="./admin/absensi-history.html" class="rounded-lg border border-sky-500/40 bg-sky-950/40 px-4 py-3 text-left text-xs font-semibold text-sky-200 transition hover:bg-sky-900/50"><i class="fa-solid fa-clock-rotate-left mr-2"></i>Riwayat Rekap</a>
           <button id="btnExport" type="button" class="rounded-lg border border-emerald-500/40 bg-emerald-950/40 px-4 py-3 text-left text-xs font-semibold text-emerald-300 transition hover:bg-emerald-900/50"><i class="fa-solid fa-file-export mr-2"></i>Ekspor CSV</button>
           <button id="requestWeekReset" type="button" class="rounded-lg border border-rose-500/40 bg-rose-950/30 px-4 py-3 text-left text-xs font-semibold text-rose-200 transition hover:bg-rose-900/40"><i class="fa-solid fa-trash-can mr-2"></i>Reset Absensi Minggu Ini</button>
@@ -198,6 +199,7 @@
   <script>
     const SUPABASE_URL = 'https://rdnhbqufxidbdwmxxabf.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_e1eww7RhRX3_l95kwvyM4Q_LysMicKv';
+    const ATTENDANCE_TIME_ZONE = 'Asia/Jakarta';
     const STAFF_SNAPSHOT_KEY = '969-resto-attendance-staff-snapshot';
     const nhostModulePromise = import('./nhost/client.js');
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -222,8 +224,14 @@
     let shiftDetailsStaffId = null;
 
     function localDateString(date = new Date()) {
-      const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-      return offsetDate.toISOString().slice(0, 10);
+      const dateParts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: ATTENDANCE_TIME_ZONE,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).formatToParts(date);
+      const parts = Object.fromEntries(dateParts.map(part => [part.type, part.value]));
+      return `${parts.year}-${parts.month}-${parts.day}`;
     }
 
     function draftStorageKey(date) {
@@ -231,17 +239,18 @@
     }
 
     function getWeekDates(date) {
-      const monday = new Date(`${date}T00:00:00`);
-      monday.setDate(monday.getDate() - (monday.getDay() + 6) % 7);
+      const monday = new Date(`${date}T00:00:00Z`);
+      monday.setUTCDate(monday.getUTCDate() - (monday.getUTCDay() + 6) % 7);
       return Array.from({ length: 7 }, (_, dayIndex) => {
         const day = new Date(monday);
-        day.setDate(monday.getDate() + dayIndex);
-        return localDateString(day);
+        day.setUTCDate(monday.getUTCDate() + dayIndex);
+        return day.toISOString().slice(0, 10);
       });
     }
 
     function formatDateLabel(date, options = { day: '2-digit', month: 'short' }) {
-      return new Intl.DateTimeFormat('id-ID', options).format(new Date(`${date}T00:00:00`));
+      return new Intl.DateTimeFormat('id-ID', { ...options, timeZone: ATTENDANCE_TIME_ZONE })
+        .format(new Date(`${date}T12:00:00Z`));
     }
 
     function escapeHtml(value) {
@@ -274,7 +283,12 @@
     }
 
     function formatClockTime(timestamp) {
-      return new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(timestamp));
+      return new Intl.DateTimeFormat('id-ID', {
+        timeZone: ATTENDANCE_TIME_ZONE,
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23'
+      }).format(new Date(timestamp));
     }
 
     function normalize24HourTime(value) {
@@ -391,9 +405,9 @@
         saveNotice.className = 'text-xs text-rose-300';
         return;
       }
-      const checkIn = new Date(`${attendanceDate.value}T${checkInTime}:00`);
-      let checkOut = new Date(`${attendanceDate.value}T${checkOutTime}:00`);
-      if (checkOut < checkIn) checkOut.setDate(checkOut.getDate() + 1);
+      const checkIn = new Date(`${attendanceDate.value}T${checkInTime}:00+07:00`);
+      let checkOut = new Date(`${attendanceDate.value}T${checkOutTime}:00+07:00`);
+      if (checkOut < checkIn) checkOut.setUTCDate(checkOut.getUTCDate() + 1);
       const staff = staffList.find(item => String(item.id) === String(staffId));
       if (!staff) return;
       saveNotice.textContent = 'Menyimpan shift ke Nhost...';
@@ -791,6 +805,97 @@
       }
     }
 
+    async function restoreWeeklyAttendance() {
+      const restoreButton = document.getElementById('restoreWeeklyAttendance');
+      restoreButton.disabled = true;
+      document.getElementById('adminStatus').textContent = `Memeriksa rekap minggu ${weekDates[0]} - ${weekDates[6]}...`;
+      try {
+        const { requestAttendanceGraphql } = await nhostModulePromise;
+        const [recapData, attendanceData] = await Promise.all([
+          requestAttendanceGraphql(`
+            query LoadWeeklyRecapForRestore($weekStart: date!) {
+              attendance_weekly_recaps(where: { week_start: { _eq: $weekStart } }, limit: 1) {
+                recap
+              }
+            }
+          `, { weekStart: weekDates[0] }, 'attendance_admin'),
+          requestAttendanceGraphql(`
+            query LoadCurrentWeekAttendanceForRestore($startDate: date!, $endDate: date!) {
+              attendance_shifts(
+                where: { duty_date: { _gte: $startDate, _lte: $endDate } }
+              ) {
+                staff_id duty_date check_in check_out
+              }
+            }
+          `, { startDate: weekDates[0], endDate: weekDates[6] }, 'attendance_admin')
+        ]);
+        const recap = recapData.attendance_weekly_recaps[0]?.recap;
+        if (!recap) {
+          throw new Error(`Rekap minggu ${weekDates[0]} - ${weekDates[6]} tidak ditemukan.`);
+        }
+        if (recap.startDate !== weekDates[0] || recap.endDate !== weekDates[6] || !Array.isArray(recap.staff)) {
+          throw new Error('Format atau periode rekap tidak sesuai dengan minggu aktif.');
+        }
+
+        const existingShifts = attendanceData.attendance_shifts || [];
+        const signatures = new Set(existingShifts.map(shift =>
+          `${shift.staff_id}|${shift.duty_date}|${shift.check_in}|${shift.check_out}`
+        ));
+        const shiftsToRestore = [];
+        for (const staff of recap.staff) {
+          if (staff?.id === undefined || staff?.id === null || !Array.isArray(staff.days)) {
+            throw new Error('Data staff pada rekap tidak valid; pemulihan dibatalkan.');
+          }
+          for (const day of staff.days) {
+            if (!weekDates.includes(day.date) || !Array.isArray(day.shifts)) {
+              throw new Error('Rincian tanggal pada rekap tidak valid; pemulihan dibatalkan.');
+            }
+            for (const shift of day.shifts) {
+              if (!shift.checkIn || !shift.checkOut
+                || !Number.isFinite(Date.parse(shift.checkIn))
+                || !Number.isFinite(Date.parse(shift.checkOut))
+                || Date.parse(shift.checkOut) <= Date.parse(shift.checkIn)) {
+                throw new Error(`Data shift ${staff.name || staff.id} pada ${day.date} tidak valid; pemulihan dibatalkan.`);
+              }
+              const signature = `${staff.id}|${day.date}|${shift.checkIn}|${shift.checkOut}`;
+              if (signatures.has(signature)) continue;
+              signatures.add(signature);
+              shiftsToRestore.push({
+                staff_id: String(staff.id),
+                staff_name: staff.name || String(staff.id),
+                staff_role: staff.role || '',
+                duty_date: day.date,
+                check_in: shift.checkIn,
+                check_out: shift.checkOut
+              });
+            }
+          }
+        }
+
+        if (shiftsToRestore.length) {
+          const restored = await requestAttendanceGraphql(`
+            mutation RestoreWeeklyAttendance($objects: [attendance_shifts_insert_input!]!) {
+              insert_attendance_shifts(objects: $objects) {
+                affected_rows
+              }
+            }
+          `, { objects: shiftsToRestore }, 'attendance_admin');
+          if (restored.insert_attendance_shifts?.affected_rows !== shiftsToRestore.length) {
+            throw new Error('Jumlah shift yang dipulihkan tidak sesuai; periksa data absensi sebelum mencoba lagi.');
+          }
+        }
+
+        await loadOnlineAttendance(weekDates);
+        document.getElementById('adminStatus').textContent = shiftsToRestore.length
+          ? `${shiftsToRestore.length} shift dari rekap ${weekDates[0]} - ${weekDates[6]} berhasil dipulihkan.`
+          : `Tidak ada shift yang perlu dipulihkan; data minggu ${weekDates[0]} - ${weekDates[6]} sudah lengkap.`;
+      } catch (error) {
+        document.getElementById('adminStatus').textContent = `Pemulihan absensi gagal: ${error.message}`;
+      } finally {
+        restoreButton.disabled = false;
+      }
+    }
+
     async function archivePastAttendance() {
       try {
         const { requestAttendanceGraphql } = await nhostModulePromise;
@@ -1018,6 +1123,7 @@
     const adminActionDialog = document.getElementById('adminActionDialog');
     document.getElementById('saveWeeklyRecap').addEventListener('click', () => requestAdminAction('saveWeeklyRecap'));
     document.getElementById('refreshStaff').addEventListener('click', () => requestAdminAction('refreshStaff'));
+    document.getElementById('restoreWeeklyAttendance').addEventListener('click', restoreWeeklyAttendance);
     document.getElementById('cancelAdminAction').addEventListener('click', () => adminActionDialog.close());
     document.getElementById('confirmAdminAction').addEventListener('click', async () => {
       const action = pendingAdminAction;
